@@ -48,7 +48,7 @@ done
 [[ "${FAIL_DOWNLOAD:-}" == 1 ]] && exit 22
 case "$url" in
     https://github.com/s12ryt/s12ryt-SPM/releases/latest) printf 'https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.0' ;;
-    https://github.com/s12ryt/s12ryt-SPM/releases/download/v0.1.0/SHA256SUMS)
+    https://github.com/s12ryt/s12ryt-SPM/releases/download/v0.1.[01]/SHA256SUMS)
         hash=$(sha256sum "$FIXTURE/payload"); hash=${hash%% *}
         [[ "${BAD_HASH:-}" == 1 ]] && hash=$(printf '%064d' 0)
         for role in server agent; do
@@ -56,7 +56,7 @@ case "$url" in
                 printf '%s  spm-%s-linux-%s\\n' "$hash" "$role" "$arch"
             done
         done > "$output" ;;
-    https://github.com/s12ryt/s12ryt-SPM/releases/download/v0.1.0/spm-*-linux-*) cp "$FIXTURE/payload" "$output" ;;
+    https://github.com/s12ryt/s12ryt-SPM/releases/download/v0.1.[01]/spm-*-linux-*) cp "$FIXTURE/payload" "$output" ;;
     *) echo "unexpected URL: $url" >&2; exit 23 ;;
 esac''')
 
@@ -110,6 +110,24 @@ esac''')
         self.assertEqual(self.run_installer(SPM_ADMIN_PASSWORD=''), 0, self.output)
         self.assertEqual(config.read_text(), 'EXISTING="do not evaluate $(touch hacked)"\n')
         self.assertEqual(data.read_bytes(), b'existing database')
+
+    def test_agent_installs_without_node_id_and_blocks_legacy_downgrade(self):
+        self.assertEqual(self.run_installer('agent', '--version', 'v0.1.1', SPM_NODE_ID=''), 0, self.output)
+        config = self.root / 'etc/spm/agent.env'
+        original = config.read_bytes()
+        self.assertNotIn(b'SPM_NODE_ID', original)
+        self.assertIn(b'SPM_TOKEN="fixture-token-secret"', original)
+        self.assertNotIn(self.env['SPM_TOKEN'], self.output)
+        self.installed('agent').write_bytes(b'current agent')
+        self.assertNotEqual(self.run_installer('agent', '--version', 'v0.1.0'), 0)
+        self.assertIn('v0.1.0', self.output)
+        self.assertEqual(self.installed('agent').read_bytes(), b'current agent')
+        self.assertEqual(config.read_bytes(), original)
+
+    def test_legacy_release_without_id_explains_upgrade_before_installing(self):
+        self.assertNotEqual(self.run_installer('agent', '--version', 'v0.1.0', SPM_NODE_ID=''), 0)
+        self.assertIn('v0.1.0', self.output)
+        self.assertFalse(self.installed('agent').exists())
 
     def test_download_or_checksum_failure_keeps_old_binary(self):
         self.installed().parent.mkdir(parents=True)

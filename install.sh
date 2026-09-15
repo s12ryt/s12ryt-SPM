@@ -53,7 +53,7 @@ main() (
         *) fail '只支援 amd64 或 arm64。' ;;
     esac
     [[ $(id -u) == 0 ]] || fail '請以 root 執行；可先 sudo -i 再執行安裝指令。'
-    for tool in curl sha256sum systemctl install mktemp awk getent useradd chown cp mv; do
+    for tool in curl sha256sum systemctl install mktemp awk grep getent useradd chown cp mv; do
         command -v "$tool" >/dev/null || fail "缺少 $tool，請先用系統套件管理員安裝。"
     done
     systemctl show-environment >/dev/null || fail '需要已啟動的 systemd。'
@@ -81,13 +81,12 @@ main() (
             } > "$work/config"
         else
             setting SPM_SERVER '主程式 URL'
-            setting SPM_NODE_ID '主機 ID'
             setting SPM_TOKEN 'Agent Token' true
             [[ "$SPM_SERVER" =~ ^https?://[^/[:space:]]+(/[^[:space:]]*)?$ && "$SPM_SERVER" != *['?#@']* ]] || fail '主程式 URL 必須為 http(s)，不能包含帳密、query 或 fragment。'
-            [[ "$SPM_NODE_ID" =~ ^[a-zA-Z0-9_-]+$ ]] || fail '主機 ID 格式無效。'
+            [[ -z ${SPM_NODE_ID:-} || "$SPM_NODE_ID" =~ ^[a-zA-Z0-9_-]+$ ]] || fail '舊版主機 ID 格式無效。'
             {
                 write_setting SPM_SERVER "$SPM_SERVER"
-                write_setting SPM_NODE_ID "$SPM_NODE_ID"
+                if [[ -n ${SPM_NODE_ID:-} ]]; then write_setting SPM_NODE_ID "$SPM_NODE_ID"; fi
                 write_setting SPM_TOKEN "$SPM_TOKEN"
             } > "$work/config"
         fi
@@ -99,6 +98,12 @@ main() (
         [[ "$resolved" == "$repository/releases/tag/"* ]] || fail '最新 Release 連結無效。'
         version=${resolved##*/}
         [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail '找不到正式版本。'
+    fi
+    if [[ "$local_role" == agent && "$version" == v0.1.0 ]]; then
+        effective_config=$config
+        [[ -f "$effective_config" ]] || effective_config="$work/config"
+        grep -Eq '^SPM_NODE_ID=("[a-zA-Z0-9_-]+"|[a-zA-Z0-9_-]+)$' "$effective_config" ||
+            fail 'v0.1.0 不支援免 ID 接入；請使用支援此功能的新版 Server 與 Agent Release。未變更既有安裝。'
     fi
     asset="spm-$local_role-linux-$arch"
     base="$repository/releases/download/$version"
