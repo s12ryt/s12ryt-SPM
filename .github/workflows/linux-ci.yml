@@ -127,6 +127,9 @@ jobs:
           MANAGER: ${{ matrix.manager }}
         run: |
           sudo useradd --create-home --shell /bin/bash spm-rootless
+          sudo install -d -m 0700 -o spm-rootless -g spm-rootless /home/spm-rootless/fixture/scripts
+          sudo install -m 0600 -o spm-rootless -g spm-rootless install-user.sh /home/spm-rootless/fixture/install-user.sh
+          sudo install -m 0600 -o spm-rootless -g spm-rootless scripts/user_install_smoke.py /home/spm-rootless/fixture/scripts/user_install_smoke.py
           if [[ "$MANAGER" == systemd ]]; then
             uid=$(id -u spm-rootless)
             sudo loginctl enable-linger spm-rootless
@@ -139,7 +142,7 @@ jobs:
           uid=$(id -u spm-rootless)
           timeout 300s sudo -u spm-rootless env HOME=/home/spm-rootless USER=spm-rootless PATH="$PATH" \
             XDG_RUNTIME_DIR="/run/user/$uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
-            python3 "$GITHUB_WORKSPACE/scripts/user_install_smoke.py" "$MANAGER"
+            python3 /home/spm-rootless/fixture/scripts/user_install_smoke.py "$MANAGER"
       - name: Clean up isolated user services
         if: always()
         run: |
