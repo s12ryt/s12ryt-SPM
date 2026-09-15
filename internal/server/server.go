@@ -33,6 +33,7 @@ type Server struct {
 	Now            func() time.Time
 	mu             sync.Mutex
 	nodes          map[string]model.Node
+	tokenNodes     map[string]string
 	settings       model.Settings
 	username       string
 	password       []byte
@@ -61,8 +62,10 @@ func New(ctx context.Context, db *store.Store, runtime *store.Runtime, user, pas
 	s := &Server{DB: db, Runtime: runtime, Now: time.Now, nodes: map[string]model.Node{}, settings: settings, username: user, password: hash, sessions: map[string]time.Time{}, attempts: map[string]attempt{}}
 	s.verifyPassword = bcrypt.CompareHashAndPassword
 	s.loginSlot = make(chan struct{}, 1)
+	s.tokenNodes = make(map[string]string, len(nodes))
 	for _, n := range nodes {
 		s.nodes[n.ID] = n
+		s.tokenNodes[n.TokenHash] = n.ID
 	}
 	return s, nil
 }
@@ -108,6 +111,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/nodes/{id}/token", s.rotateToken)
 	mux.HandleFunc("GET /api/nodes/{id}/history", s.history)
 	mux.HandleFunc("POST /api/ingest/{id}", s.ingest)
+	mux.HandleFunc("POST /api/ingest", s.ingest)
 	mux.HandleFunc("GET /api/alerts", s.alerts)
 	mux.HandleFunc("GET /api/settings", s.getSettings)
 	mux.HandleFunc("PUT /api/settings", s.putSettings)
@@ -115,7 +119,7 @@ func (s *Server) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if r.Method != "GET" && !strings.HasPrefix(r.URL.Path, "/api/ingest/") {
+		if r.Method != "GET" && r.URL.Path != "/api/ingest" && !strings.HasPrefix(r.URL.Path, "/api/ingest/") {
 			origin := r.Header.Get("Origin")
 			if origin != "" {
 				u, e := url.Parse(origin)
@@ -260,6 +264,7 @@ func (s *Server) createNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.nodes[n.ID] = n
+	s.tokenNodes[n.TokenHash] = n.ID
 	respond(w, 201, map[string]string{"id": n.ID, "token": token})
 }
 func (s *Server) updateNode(w http.ResponseWriter, r *http.Request) {
@@ -312,6 +317,7 @@ func (s *Server) deleteNode(w http.ResponseWriter, r *http.Request) {
 		failure(w, 500, "無法刪除主機")
 		return
 	}
+	delete(s.tokenNodes, s.nodes[id].TokenHash)
 	delete(s.nodes, id)
 	respond(w, 200, map[string]bool{"ok": true})
 }
@@ -327,12 +333,15 @@ func (s *Server) rotateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := rand.Text()
+	previousHash := n.TokenHash
 	n.TokenHash = hashToken(token)
 	if err := s.DB.SaveNode(r.Context(), n); err != nil {
 		failure(w, 500, "無法更新 Token")
 		return
 	}
 	s.nodes[n.ID] = n
+	delete(s.tokenNodes, previousHash)
+	s.tokenNodes[n.TokenHash] = n.ID
 	respond(w, 200, map[string]string{"id": n.ID, "token": token})
 }
 func copyNode(n model.Node) model.Node {
@@ -364,9 +373,13 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	n, ok := s.nodes[r.PathValue("id")]
 	auth := r.Header.Get("Authorization")
 	hash := hashToken(strings.TrimPrefix(auth, "Bearer "))
+	id := r.PathValue("id")
+	if id == "" {
+		id = s.tokenNodes[hash]
+	}
+	n, ok := s.nodes[id]
 	if !ok || !strings.HasPrefix(auth, "Bearer ") || subtle.ConstantTimeCompare([]byte(hash), []byte(n.TokenHash)) != 1 {
 		failure(w, 401, "Agent 驗證失敗")
 		return
