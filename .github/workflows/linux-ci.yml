@@ -69,21 +69,8 @@ jobs:
         run: |
           set -o pipefail
           go test -race -json ./... -count=1 -timeout=5m | tee test-results.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          events = [json.loads(line) for line in Path('test-results.json').read_text().splitlines()]
-          required = {
-              ('spm/internal/store', 'TestPostgresIntegration'),
-              ('spm/internal/collector', 'TestUpload'),
-              ('spm/internal/collector', 'TestRunUploadsAndStops'),
-              ('spm/internal/server', 'TestWebhookPayloadAndFailure'),
-          }
-          passed = {(e.get('Package'), e.get('Test')) for e in events if e.get('Action') == 'pass'}
-          assert required <= passed, f'Required tests did not PASS: {required - passed}'
-          assert not any(e.get('Action') == 'skip' for e in events), 'Unexpected skipped test'
-          print('Verified: PostgreSQL and all previously blocked HTTP tests PASS; zero skips')
-          PY
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+          python3 scripts/verify_go_tests.py test-results.json
       - name: Build Linux executables
         env:
           CGO_ENABLED: '0'
