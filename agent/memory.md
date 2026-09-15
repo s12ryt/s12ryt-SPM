@@ -14,6 +14,10 @@
 - 已讀取三個 job 日誌：完整 Go race／PostgreSQL 17 零案例略過，新增免 ID 測試、15 項 Vue、28 項 Python、Linux 真實免 ID 上報及 ARM64 交叉建置通過；兩種非 root 管理器以正式 v0.1.0 驗證舊設定相容，沒有冒充新版 Release 驗收。
 - 最新正式 Release 仍為 v0.1.0；程式與 Linux 產物已可審查，發布下一版需另確認。保存本輪驗證證據，收尾僅更新文件。
 - 使用者在完整 CI 成功、文件提交及工作區確認後，明確選擇發布 v0.1.1；將對已驗證的 7359ffc 程式建立版本標籤，再由 Release workflow 全套驗證、發布及正式安裝實測，不覆寫 v0.1.0。
+- 推送 v0.1.1 標籤指向 7359ffc8fdc683bb5bbccb41ec1007836f3f02d5；Release workflow 35028677753 全部成功，正式發布四個 Linux 執行檔與 SHA256SUMS。
+- 已讀取 publish job 104582452583 日誌，四份校驗均 OK；從公開 Release 安裝的 Agent 只給網址與 Token，真實樣本、systemd、設定權限與更新保留驗收 PASS，測試服務於 finally 清理。
+- 透過 gh 確認 v0.1.1 為 latest、非草稿及非預發布；在預核暫存目錄撰寫發行說明後，以 notes-file 更新正式 Release 文字，未修改已發布資產或 v0.1.0。
+- README／部署說明改為正式 v0.1.1，保留先更新 Server 再更新 Agent 的順序；更新驗證與任務紀錄。兩種免 root 真實 CI 仍明確標示舊版相容範圍，沒有宣稱新版免 ID 非 root 實測。
 
 ## 2026-09-16：Agent 接入設定說明
 
