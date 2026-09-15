@@ -216,6 +216,8 @@ SUPERVISOR
     for file in "$destination" "$service_file" "$dir/run" "$control"; do
         [[ ! -f "$file" ]] || cp -p "$file" "$work/old-$(basename "$file")"
     done
+    # EXIT callbacks: ShellCheck cannot follow this path (upstream issue #2542).
+    # shellcheck disable=SC2317
     rollback() {
         printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
         if [[ -f "$control" && -f "$dir/manager" ]]; then
@@ -231,8 +233,15 @@ SUPERVISOR
         [[ "$manager" != systemd ]] || timeout 30 systemctl --user daemon-reload || true
         [[ ! -f "$work/old-spm-$local_role" ]] || "$control" "$local_role" start || true
     }
+    # shellcheck disable=SC2317
+    cleanup() {
+        local result=$?
+        if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi
+        rm -rf -- "$work"
+        exit "$result"
+    }
     replacing=true
-    trap 'result=$?; if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi; rm -rf -- "$work"; exit "$result"' EXIT
+    trap 'cleanup' EXIT
     install -m 0700 "$work/binary" "$destination.new"; mv -f "$destination.new" "$destination"
     install -m 0700 "$work/run" "$dir/run"
     install -m 0700 "$work/control" "$control"

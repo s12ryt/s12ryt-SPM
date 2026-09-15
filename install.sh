@@ -132,6 +132,8 @@ main() (
         printf 'Restart=always\nRestartSec=5\nTimeoutStopSec=15\nNoNewPrivileges=true\nUMask=0077\n\n[Install]\nWantedBy=multi-user.target\n'
     } > "$work/unit"
     service="spm-$local_role"
+    # EXIT callbacks: ShellCheck cannot follow this path (upstream issue #2542).
+    # shellcheck disable=SC2317
     rollback() {
         printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
         systemctl stop "$service" || true
@@ -148,8 +150,15 @@ main() (
         systemctl daemon-reload || true
         [[ ! -f "$work/previous" ]] || systemctl restart "$service" || true
     }
+    # shellcheck disable=SC2317
+    cleanup() {
+        local result=$?
+        if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi
+        rm -rf -- "$work"
+        exit "$result"
+    }
     replacing=true
-    trap 'result=$?; if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi; rm -rf -- "$work"; exit "$result"' EXIT
+    trap 'cleanup' EXIT
     install -m 0755 "$work/$asset" "$destination.new"
     mv -f "$destination.new" "$destination"
     install -m 0644 "$work/unit" "$unit"
