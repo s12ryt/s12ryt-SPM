@@ -75,14 +75,31 @@ main() (
     set -euo pipefail
     export LC_ALL=C
     local_role=server; version=''
+    server_set=false; token_set=false
     if [[ ${1:-} == agent || ${1:-} == server ]]; then local_role=$1; shift; fi
     while (($#)); do
         case "$1" in
             --version) [[ $# -ge 2 ]] || fail '--version 需要版本'; version=$2; shift 2 ;;
-            --help|-h) echo '用法：bash install-user.sh [agent|server] [--version vX.Y.Z]；預設只安裝 Server。'; exit 0 ;;
-            *) fail "不支援的參數：$1" ;;
+            --server|--token)
+                option=$1
+                [[ $# -ge 2 && "$2" != --* ]] || fail "$option 需要值。"
+                value=$2; shift 2
+                case "$option" in --server) SPM_SERVER=$value; server_set=true ;; --token) SPM_TOKEN=$value; token_set=true ;; esac ;;
+            --server=*) SPM_SERVER=${1#*=}; server_set=true; shift ;;
+            --token=*) SPM_TOKEN=${1#*=}; token_set=true; shift ;;
+            --help|-h) printf '用法：bash install-user.sh [agent|server] [--version vX.Y.Z]；預設只安裝 Server。\nAgent 參數：--server URL --token TOKEN（明確提供時更新既有設定）\n'; exit 0 ;;
+            *) fail '不支援的參數；請查看 --help。' ;;
         esac
     done
+    if [[ "$server_set" == true || "$token_set" == true ]]; then
+        [[ "$local_role" == agent ]] || fail '--server／--token 僅供 agent 使用。'
+    fi
+    if [[ "$server_set" == true ]]; then
+        [[ "$SPM_SERVER" =~ ^https?://[^/[:space:]]+(/[^[:space:]]*)?$ && "$SPM_SERVER" != *['?#@']* ]] || fail '--server 必須為有效 http(s) URL，不能包含帳密、query 或 fragment。'
+    fi
+    if [[ "$token_set" == true ]]; then
+        [[ -n "$SPM_TOKEN" && "$SPM_TOKEN" != *$'\n'* && "$SPM_TOKEN" != *$'\r'* ]] || fail '--token 不得空白或包含換行。'
+    fi
     [[ -z "$version" || "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail '版本格式必須為 vX.Y.Z。'
     [[ $(uname -s) == Linux ]] || fail '只支援 Linux VPS。'
     case $(uname -m) in
@@ -110,6 +127,19 @@ main() (
     elif command -v systemctl >/dev/null && timeout 5 systemctl --user show-environment >/dev/null 2>&1; then manager=systemd
     else manager=supervisor; fi
     [[ "$manager" == systemd || "$manager" == supervisor ]] || fail '既有程序管理設定無效。'
+    config_update=false
+    if [[ -f "$dir/config.env" && ( "$server_set" == true || "$token_set" == true ) ]]; then
+        {
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                [[ "$server_set" != true || "$line" != SPM_SERVER=* ]] || continue
+                [[ "$token_set" != true || "$line" != SPM_TOKEN=* ]] || continue
+                printf '%s\n' "$line"
+            done < "$dir/config.env"
+            if [[ "$server_set" == true ]]; then printf 'SPM_SERVER=%s\n' "$SPM_SERVER"; fi
+            if [[ "$token_set" == true ]]; then printf 'SPM_TOKEN=%s\n' "$SPM_TOKEN"; fi
+        } > "$work/config.env"
+        config_update=true
+    fi
 
     if [[ ! -f "$dir/config.env" ]]; then
         if [[ "$local_role" == server ]]; then
@@ -140,7 +170,7 @@ main() (
     fi
     if [[ "$local_role" == agent && "$version" == v0.1.0 ]]; then
         effective_config="$dir/config.env"
-        [[ -f "$effective_config" ]] || effective_config="$work/config.env"
+        [[ ! -f "$work/config.env" ]] || effective_config="$work/config.env"
         grep -Eq '^SPM_NODE_ID=[a-zA-Z0-9_-]+$' "$effective_config" ||
             fail 'v0.1.0 不支援免 ID 接入；請使用支援此功能的新版 Server 與 Agent Release。未變更既有安裝。'
     fi
@@ -225,12 +255,16 @@ SUPERVISOR
     for file in "$destination" "$service_file" "$dir/run" "$control"; do
         [[ ! -f "$file" ]] || cp -p "$file" "$work/old-$(basename "$file")"
     done
+    if [[ "$config_update" == true ]]; then cp -p "$dir/config.env" "$work/previous-config"; fi
     # EXIT callbacks: ShellCheck cannot follow this path (upstream issue #2542).
     # shellcheck disable=SC2317
     rollback() {
         printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
         if [[ -f "$control" && -f "$dir/manager" ]]; then
             "$control" "$local_role" stop >/dev/null 2>&1 || true
+        fi
+        if [[ -f "$work/previous-config" ]]; then
+            cp -p "$work/previous-config" "$dir/config.env.new" && mv -f "$dir/config.env.new" "$dir/config.env"
         fi
         for file in "$destination" "$service_file" "$dir/run" "$control"; do
             if [[ -f "$work/old-$(basename "$file")" ]]; then
@@ -252,6 +286,9 @@ SUPERVISOR
     replacing=true
     trap 'cleanup' EXIT
     install -m 0700 "$work/binary" "$destination.new"; mv -f "$destination.new" "$destination"
+    if [[ "$config_update" == true ]]; then
+        install -m 0600 "$work/config.env" "$dir/config.env.new"; mv -f "$dir/config.env.new" "$dir/config.env"
+    fi
     install -m 0700 "$work/run" "$dir/run"
     install -m 0700 "$work/control" "$control"
     install -m 0600 "$work/service" "$service_file"

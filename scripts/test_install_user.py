@@ -56,6 +56,13 @@ cp "$FIXTURE/commands/fake-supervisorctl" "$3/bin/supervisorctl"''')
     def installed(self, role='server'):
         return self.role_dir(role) / f'spm-{role}'
 
+    def agent_config(self):
+        return self.role_dir('agent') / 'config.env'
+
+    test_agent_connection_flags_override_env_and_preserve_other_settings = test_install.InstallerTests.test_agent_connection_flags_override_env_and_preserve_other_settings
+    test_failed_connection_update_restores_config_and_binary = test_install.InstallerTests.test_failed_connection_update_restores_config_and_binary
+    test_connection_flags_reject_invalid_values_without_disclosing_tokens = test_install.InstallerTests.test_connection_flags_reject_invalid_values_without_disclosing_tokens
+
     def control(self, role, action, **env):
         return subprocess.run(['bash', str(self.home / '.local/bin/spm-user'), role, action],
                               env=dict(self.env, **env), capture_output=True, text=True, timeout=25)
