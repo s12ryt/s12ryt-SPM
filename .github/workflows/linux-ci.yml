@@ -63,8 +63,8 @@ jobs:
           test -z "$(gofmt -l cmd internal web/embed*.go)"
           go vet ./...
           go mod verify
-          bash -n install.sh
-          shellcheck install.sh
+          for script in install.sh install-user.sh; do bash -n "$script"; done
+          shellcheck install.sh install-user.sh
       - name: Complete race suite with real PostgreSQL
         env:
           TEST_POSTGRES_URL: postgres://spm_ci:isolated-ci-only@127.0.0.1:5432/spm_ci?sslmode=disable
@@ -106,3 +106,44 @@ jobs:
           path: bin/spm-*
           if-no-files-found: error
           retention-days: 14
+
+  user-install:
+    name: Non-root Release installation (${{ matrix.manager }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        manager: [systemd, supervisor]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Prepare an isolated unprivileged account
+        env:
+          MANAGER: ${{ matrix.manager }}
+        run: |
+          sudo useradd --create-home --shell /bin/bash spm-rootless
+          if [[ "$MANAGER" == systemd ]]; then
+            uid=$(id -u spm-rootless)
+            sudo loginctl enable-linger spm-rootless
+            sudo systemctl start "user@$uid.service"
+          fi
+      - name: Install actual public Release as non-root and exercise service lifecycle
+        env:
+          MANAGER: ${{ matrix.manager }}
+        run: |
+          uid=$(id -u spm-rootless)
+          timeout 300s sudo -u spm-rootless env HOME=/home/spm-rootless USER=spm-rootless PATH="$PATH" \
+            XDG_RUNTIME_DIR="/run/user/$uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+            python3 "$GITHUB_WORKSPACE/scripts/user_install_smoke.py" "$MANAGER"
+      - name: Clean up isolated user services
+        if: always()
+        run: |
+          uid=$(id -u spm-rootless) || exit 0
+          sudo loginctl terminate-user spm-rootless || true
+          sudo loginctl disable-linger spm-rootless || true
+          sudo pkill -u "$uid" || true
