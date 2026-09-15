@@ -1,5 +1,7 @@
 # 驗證紀錄（2026-09-15）
 
+免 root 安裝最新結果見 [使用者安裝驗收](user-install-validation.md)：真實 Ubuntu 一般 UID 的 systemd／Supervisor、實際上報、崩潰重啟、啟停與更新保留資料全部通過，同次完整回歸 CI 成功。
+
 公開 v0.1.0 與一鍵安裝最新結果見 [Release 驗證](release-validation.md)：完整 CI、正式 Release 下載、systemd 安裝、真實 Agent 上報及更新保留資料均通過。
 
 最新遠端結果見 [GitHub CI 證據](ci-validation.md)：Ubuntu 上完整 race、PostgreSQL 17 與真實 Agent 整合全部通過。以下保留首次交付紀錄；後續本機稽核見 [深入稽核紀錄](audit-2026-09-15.md)。歷史文件所述 HTTP race／PostgreSQL 環境限制，已由此次遠端實測補足。
