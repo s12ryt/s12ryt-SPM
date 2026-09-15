@@ -8,8 +8,9 @@
 - [x] TDD 修正兩個安裝器中途寫檔失敗未回復，補首次失敗重試回歸。
 - [x] Go 全套／vet／模組檢查、Linux store race、Vue 14 項／型別／建置及 Python 24 項通過。
 - [x] Windows 真實 Server／Agent smoke 通過；主代理完成修補後複查。
-- [ ] 提交推送並驗證本輪完整 Linux race、PostgreSQL、兩種免 root 安裝 CI。
-- [ ] 保存 CI 證據並確認工作區狀態；詳見 `audit-2026-09-16.md`。
+- [x] 提交推送並驗證本輪完整 Linux race、PostgreSQL、兩種免 root 安裝 CI。
+- [x] 修正 EXIT trap 靜態檢查問題；第二輪 CI 35020366845 三個 job 全部成功。
+- [x] 保存 CI 證據及發布限制；詳見 `audit-2026-09-16.md`，收尾僅更新文件。
 
 ## 2026-09-15：免 root VPS 一鍵安裝
 

@@ -11,6 +11,9 @@
 - 對照需求、歷史與改動，自行複查品質、安全及驗證；GitHub 沒有既有 issue／PR。新增 `audit-2026-09-16.md`，遠端 CI 待推送後記錄，未發布或覆寫 Release。
 - 六筆提交推送至 `013d7db`；首輪 CI 35019467699 的 systemd／Supervisor 驗收成功，主工作因 ShellCheck SC2154／SC2317 而停止，未執行完整 race／PostgreSQL。
 - 將 EXIT trap 抽成 cleanup 區域變數函式；查閱 ShellCheck 上游 #2542，僅對已被退出行為測試覆蓋的回呼註明 SC2317 例外。Debian ShellCheck 0.10.0 解壓在系統暫存，不安裝系統套件；靜態檢查及 24 項 Python 回歸通過，待重跑遠端 CI。
+- 推送 `bc0af10a1e829067c701f36db81445e3f4b42728` 後，第二輪 CI 35020366845 三個 job 全部成功；已讀取日誌，完整 Go race／PostgreSQL 17 必要案例全部 PASS，零測試案例略過。
+- 同次 Vue 14 項、Python 24 項、型別／靜態檢查、Linux 新執行檔真實上報及 ARM64 交叉建置通過；兩種管理器各以 UID 1002 完成正式 Release 安裝、秘密原值、崩潰重啟、啟停與更新保留。
+- 更新本輪稽核證據、任務及驗證索引；收尾僅文件。確認最新正式 Release 仍為 v0.1.0，其 Go／Vue 執行檔未含本輪修復，未新增或覆寫 Release。
 
 ## 2026-09-15：免 root VPS 安裝
 
