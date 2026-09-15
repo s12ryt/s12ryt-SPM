@@ -1,6 +1,6 @@
 # 驗證紀錄（2026-09-15）
 
-以下保留首次交付紀錄。使用者要求仔細檢查後的最新結果見 [深入稽核紀錄](audit-2026-09-15.md)：Go 全套／vet 通過、Vue 增至 12 項測試、選定範圍 race 通過，並重新建置及驗證 Windows／Linux 執行檔。完整 HTTP race 與 PostgreSQL 實例限制仍保留。
+最新遠端結果見 [GitHub CI 證據](ci-validation.md)：Ubuntu 上完整 race、PostgreSQL 17 與真實 Agent 整合全部通過。以下保留首次交付紀錄；後續本機稽核見 [深入稽核紀錄](audit-2026-09-15.md)。歷史文件所述 HTTP race／PostgreSQL 環境限制，已由此次遠端實測補足。
 
 ## 範圍與輪次
 
