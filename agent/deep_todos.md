@@ -1,5 +1,22 @@
 # 任務歷史
 
+## 2026-09-16：Agent 免填主機 ID
+
+- [x] 使用者要求 ID 由 Server 自行產生與保管，更新 question.md 驗收。
+- [x] Server Token 索引、Agent 上報與入口先出現 3 個有效 RED，最小實作後通過。
+- [x] 驗證多台主機隔離、Server 重新載入、Token 更換、刪除與舊 API 相容。
+- [x] 面板與兩個安裝器先出現 5 個有效 RED，移除 ID 必填並阻擋不相容的舊版本安裝。
+- [x] Go 全套／vet／模組驗證、15 項 Vue／型別／建置、28 項 Python、ShellCheck 通過。
+- [x] Windows 真實執行檔在沒有 SPM_NODE_ID 的環境下完成兩份樣本、歷史與權限驗證，已清理子程序。
+- [x] 更新安裝範本、文件與下一版 Release smoke 驗收，主代理自行複查。
+- [ ] 分組提交推送並確認本輪完整 Linux CI，保存證據。
+- [ ] 確認正式 Release 交付狀態；目前 v0.1.0 不包含本次免 ID 功能。
+
+## 2026-09-16：Agent 如何指定 Server
+
+- [x] 查閱實作，確認 Server URL、主機 ID／Token、首次安裝詢問與既有設定修改方式。
+- [x] 說明 Agent 主動上報，跨機連線使用 Agent 能連到的 Server 網域／IP。
+
 ## 2026-09-16：具體程式缺陷檢查
 
 - [x] 重讀驗收與核心程式、前端、兩種安裝器，建立 Go／Vue／Python 基線。

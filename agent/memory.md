@@ -1,5 +1,21 @@
 # 操作與決策紀錄
 
+## 2026-09-16：Agent 免 ID 接入
+
+- 依使用者新要求取代先前三項連線設定；讀取 Server／Agent、兩安裝器、測試、部署及專案歷史，驗收寫入 question.md。
+- ID 原本已由 Server 產生；新增 Token 雜湊到 ID 的記憶體索引及 POST /api/ingest，啟動時從既有資料庫重建，不修改 schema 或保存明文 Token。
+- 索引在主機新增／Token 更換／刪除成功寫入資料庫後更新，沿用 mutex；舊 POST /api/ingest/{id} 仍驗證指定主機的 Token。
+- Server API、collector 空 ID、Agent 入口共 3 例先 RED，再完成實作與 Go 目標回歸；覆蓋同名主機隔離、歷史、重新載入、輪替與撤銷。
+- 面板 1 例與兩安裝器 4 例先因 ID 必填／舊版提示缺失而 RED；移除欄位與詢問，僅保留舊環境設定相容。使用有效設定檔阻擋無 ID 降級至 v0.1.0，不 source 或印出秘密。
+- 15 項 Vue、28 項 Python、Go 全套／vet／mod verify、型別與建置、Bash 語法及 ShellCheck 通過。本機 PostgreSQL 未提供實例，完整 race／PostgreSQL 待本輪遠端 CI。
+- 修改 smoke 不傳或繼承 SPM_NODE_ID，重建 Windows 雙端後真實上報 PASS，已確認本工作區服務程序數為 0。Release smoke 改為未來發布時驗證無 ID 安裝；既有非 root CI 保留正式 v0.1.0 的舊設定相容驗證。
+- 以需求、程式品質、安全、實際驗證及歷史五個面向自行複查，沒有呼叫子代理。尚未發布新版本或覆寫 v0.1.0。
+
+## 2026-09-16：Agent 接入設定說明
+
+- 查閱 Agent 入口、免 root 安裝器、README 與前端憑證提示，確認以 `SPM_SERVER` 指定 Server，搭配面板新增主機取得的 `SPM_NODE_ID`／`SPM_TOKEN` 上報；首次安裝會詢問三個值。
+- 免 root 安裝將設定保存在 `~/.local/share/spm/agent/config.env`，修改後透過 `spm-user agent restart` 載入；重跑安裝保留既有設定，不重新詢問。此次僅說明既有行為，未變更程式或啟動服務。
+
 ## 2026-09-16：具體程式缺陷檢查
 
 - 沿用既有驗收、技術棧及提交／推送授權；讀取實作與測試，全程沒有使用子代理。
