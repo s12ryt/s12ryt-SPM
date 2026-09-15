@@ -8,6 +8,33 @@
 - SQLite 預設儲存；PostgreSQL URL 設定與重啟自動搬移。
 - 全域／單機採樣間隔與告警規則；Web 告警、選用 Webhook／Telegram。
 
+## VPS 一鍵安裝
+
+支援 Linux amd64／arm64 與 systemd。請在 root 終端執行（一般帳號可先 `sudo -i`），需已安裝 `curl`、CA 憑證、`sha256sum` 與 `useradd`。只下載 [Releases](https://github.com/s12ryt/s12ryt-SPM/releases) 已建置的執行檔，不需 Go、Node.js，也不在 VPS 編譯。
+
+預設**只安裝 Server**，初次提示輸入管理員密碼；帳號預設 `admin`，面板為 `http://VPS_IP:8080`：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install.sh)
+```
+
+在面板新增主機並取得 ID／Token 後，到被監控的 VPS 執行，**只安裝 Agent**：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install.sh) agent
+```
+
+初次 Agent 安裝提示主程式 URL、主機 ID、Token；密碼與 Token 不會顯示或記錄在安裝輸出。也可預先 export `SPM_ADMIN_USER`／`SPM_ADMIN_PASSWORD`／`SPM_LISTEN` 或 `SPM_SERVER`／`SPM_NODE_ID`／`SPM_TOKEN` 進行非互動安裝。安裝器的 Server 預設監聽 `0.0.0.0:8080`，可預設 `SPM_LISTEN=127.0.0.1:8080` 搭配 [HTTPS 反向代理](deploy/README.md)。安裝器不修改防火牆。
+
+重跑相同指令更新至最新正式 Release，保留原設定與資料；在最後加 `--version v0.1.0` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。服務啟動檢查失敗會嘗試還原舊執行檔與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
+
+- 執行檔：`/opt/spm/spm-server` 或 `/opt/spm/spm-agent`。
+- 設定：`/etc/spm/server.env` 或 `/etc/spm/agent.env`，root 擁有、權限 `0600`。更新不覆蓋，修改後重啟對應服務。
+- Server 資料：`/var/lib/spm`；服務：`spm-server`／`spm-agent`，以一般 `spm` 帳號執行、開機自動啟動。
+- 查看狀態：`systemctl status spm-server`；日誌：`journalctl -u spm-server`（Agent 改用 `spm-agent`）。
+
+`bash (curl ...)` 並非有效 Bash 語法；上述 `<(...)` 會把下載的腳本交給 Bash。
+
 ## 建置
 
 需求：Go 1.26 以上、Node.js 22.12 以上及 npm。已在 Go 1.26.3、Node.js 24.11.1 驗證。Node.js 僅供建置前端，正式執行時不需要。
@@ -142,3 +169,9 @@ Smoke 測試會建立暫存資料庫、啟動主程式與 Agent，驗證真實�
 [Linux CI](https://github.com/s12ryt/s12ryt-SPM/actions/workflows/linux-ci.yml) 在推送 main、Pull Request 或手動觸發時執行。使用 Ubuntu 24.04 runner 與獨立 PostgreSQL 17 service，執行前端測試／型別／建置、Go vet、完整 race（不排除 HTTP 測試）、PostgreSQL 雙向搬移及真實 Linux Agent 上報。CI 拒絕任何略過的測試，並保留測試 JSON 與 Linux 執行檔 14 天；ARM64 產物僅交叉編譯。
 
 [已成功的完整執行](https://github.com/s12ryt/s12ryt-SPM/actions/runs/34950376689)及 [CI 驗證紀錄](agent/ci-validation.md)包含提交版本與實測範圍；原本本機 PostgreSQL／HTTP race 的待驗證項目已由遠端測試補足。
+
+## 自動發布 Releases
+
+推送 `vX.Y.Z` 標籤觸發 [Release workflow](.github/workflows/release.yml)。它先重用完整 Linux CI，通過後將該次建置的 Server／Agent（Linux amd64、arm64）及 `SHA256SUMS` 上傳草稿，再發布為正式版本。安裝來源永遠是正式 Release；Artifacts 只用於 workflow 內傳遞已驗證產物。
+
+發布後以乾淨 Ubuntu runner 從公開 Release 真正安裝 systemd 服務，檢查 Server／Agent 角色隔離、特殊字元密碼、實際採樣與更新保留資料；失敗會把該 Release 撤回草稿。標籤應指向 main 已審查的提交，例如 `git tag v0.1.0` 後 `git push origin v0.1.0`。版本資產不覆寫；有修正時發布新版本。

@@ -1,5 +1,7 @@
 # Linux 部署範例
 
+建議使用 [README 一鍵安裝](../README.md#vps-一鍵安裝)，從 Releases 取得已建置程式並建立 systemd 服務。下列為手動安裝替代步驟；一鍵安裝預設 Server 監聽 `0.0.0.0:8080`，手動範本則為 `127.0.0.1:8080`。
+
 以下操作由管理系統的人員在目標 VPS 執行。採一般 `spm` 帳號執行主程式與 Agent；收集一般主機資訊不需要 root。
 
 1. 建立專用 `spm` 使用者，將對應 CPU 架構的執行檔安裝成 `/opt/spm/spm-server` 或 `/opt/spm/spm-agent`，權限 `0755`。
