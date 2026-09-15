@@ -2,11 +2,67 @@ package store
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"spm/internal/model"
 	"testing"
 )
+
+func TestDefaultDatabasePreservesSpecialDirectoryNames(t *testing.T) {
+	for _, name := range []string{"hash#data", "percent%data", "space data"} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			dir := filepath.Join(t.TempDir(), name)
+			db, _, err := Load(ctx, dir, "")
+			if err != nil {
+				t.Fatalf("cannot open database under a valid directory: %v", err)
+			}
+			if err := db.SaveNode(ctx, model.Node{ID: "persisted", Name: name}); err != nil {
+				t.Fatal(err)
+			}
+			db.Close()
+			if _, err := os.Stat(filepath.Join(dir, "spm.db")); err != nil {
+				t.Fatalf("database was not created at the requested location: %v", err)
+			}
+			db, _, err = Load(ctx, dir, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			nodes, err := db.Nodes(ctx)
+			if err != nil || len(nodes) != 1 || nodes[0].Name != name {
+				t.Fatalf("data did not survive reopen: %+v, %v", nodes, err)
+			}
+		})
+	}
+}
+
+func TestSQLiteEscapedPathOpensExactFile(t *testing.T) {
+	names := []string{"hash#data.db", "literal%23.db", "space data.db"}
+	if runtime.GOOS != "windows" {
+		names = append(names, "query?mode=memory.db")
+	}
+	for _, name := range names {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), name)
+			u := &url.URL{Scheme: "sqlite", Path: "/" + filepath.ToSlash(path)}
+			db, err := Open(context.Background(), u.String())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			if _, err := os.Stat(path); err != nil {
+				t.Fatalf("SQLite opened a different path: %v", err)
+			}
+			var mode string
+			if err := db.DB.QueryRow("PRAGMA journal_mode").Scan(&mode); err != nil || mode != "wal" {
+				t.Fatalf("WAL not enabled: %q, %v", mode, err)
+			}
+		})
+	}
+}
 
 func TestDatabaseURLRejectsRelativeSQLitePaths(t *testing.T) {
 	for _, raw := range []string{"sqlite:relative.db", "sqlite:///../relative.db?", "sqlite:relative/path.db", "sqlite:///%00.db"} {

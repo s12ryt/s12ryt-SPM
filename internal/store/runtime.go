@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -28,7 +29,8 @@ func Load(ctx context.Context, dir, environment string) (*Store, *Runtime, error
 	if err = os.MkdirAll(abs, 0700); err != nil {
 		return nil, nil, err
 	}
-	r := &Runtime{Active: "sqlite:///" + filepath.ToSlash(filepath.Join(abs, "spm.db")), Path: filepath.Join(abs, "database.json")}
+	defaultURL := &url.URL{Scheme: "sqlite", Path: "/" + filepath.ToSlash(filepath.Join(abs, "spm.db"))}
+	r := &Runtime{Active: defaultURL.String(), Path: filepath.Join(abs, "database.json")}
 	defaults := *r
 	b, err := os.ReadFile(r.Path)
 	if err == nil {

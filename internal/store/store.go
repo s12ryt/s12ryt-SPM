@@ -61,7 +61,8 @@ func Open(ctx context.Context, raw string) (*Store, error) {
 		if err := os.MkdirAll(filepath.Dir(filepath.FromSlash(p)), 0700); err != nil {
 			return nil, err
 		}
-		dsn = p + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+		fileURL := &url.URL{Scheme: "file", Path: u.Path, RawQuery: "_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"}
+		dsn = fileURL.String()
 	}
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
