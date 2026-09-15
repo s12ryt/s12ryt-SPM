@@ -70,6 +70,8 @@ Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent
 
 `systemd --user` 會啟用登入時啟動；登出後持續執行及開機啟動需主機允許 linger。Supervisor 會在背景管理與自動重啟程式，但本安裝器不改 crontab；VPS 重開機後請重新執行 `start`。業者若強制清理登出工作階段，外部程序管理器也無法保證存活，需使用業者提供的持續執行機制。
 
+兩種方式均已在 Ubuntu 一般帳號完成真實 Release 安裝、Agent 上報、崩潰重啟及更新保留驗證：[成功 CI](https://github.com/s12ryt/s12ryt-SPM/actions/runs/34957308410)、[完整驗收紀錄](agent/user-install-validation.md)。
+
 ## 從原始碼建置
 
 需求：Go 1.26 以上、Node.js 22.12 以上及 npm。已在 Go 1.26.3、Node.js 24.11.1 驗證。Node.js 僅供建置前端，正式執行時不需要。

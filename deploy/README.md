@@ -4,6 +4,8 @@
 
 沒有 root 權限時使用 [免 root 一鍵安裝](../README.md#沒有-root-的-vps)。它只寫入自己的家目錄，優先使用 `systemd --user`，否則以 Python venv 安裝 Supervisor；用 `~/.local/bin/spm-user server start|stop|restart|status|logs` 管理。請使用業者允許的非特權 port。設定是 `~/.local/share/spm/server/config.env` 的純文字 `KEY=值`；備份前先停止 Server，再複製整個 `server/data`。Supervisor 不自動設定重開機啟動，登出存活仍受業者政策限制。
 
+兩種免 root 管理方式皆已於 Ubuntu 一般帳號實測，包含崩潰重啟與更新保留：[驗收證據](../agent/user-install-validation.md)。
+
 以下操作由管理系統的人員在目標 VPS 執行。採一般 `spm` 帳號執行主程式與 Agent；收集一般主機資訊不需要 root。
 
 1. 建立專用 `spm` 使用者，將對應 CPU 架構的執行檔安裝成 `/opt/spm/spm-server` 或 `/opt/spm/spm-agent`，權限 `0755`。
