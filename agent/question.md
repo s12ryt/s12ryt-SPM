@@ -1,5 +1,15 @@
 # 需求與 TDD 驗收標準
 
+## 免 root VPS 一鍵安裝（2026-09-15）
+
+- 使用者要求提供免 root 一鍵安裝，允許引用外部程序管理工具；確認選擇「自動選擇」：優先 systemd --user，否則使用獨立 Python venv 的 Supervisor。
+- 新增 `install-user.sh`；不加參數只安裝 Server，`agent` 只安裝 Agent。SPM 執行檔仍只能來自正式 Release 且必須驗證 SHA-256。
+- 所有執行檔、設定、資料與服務檔只寫入目前使用者 HOME；不執行 sudo、useradd、chown，不變更系統服務。
+- 首次自動選擇管理方式，更新保留既有管理方式、設定及資料；下載／校驗失敗不替換，啟動失敗嘗試還原舊執行檔與服務設定。
+- 提供 `~/.local/bin/spm-user server|agent start|stop|restart|status|logs`，限時控制、Supervisor socket 私有且日誌輪替。
+- Supervisor 備援需要 Python 3／venv；依賴不足明確提示，不嘗試提升權限。開機自動啟動／登出存活受主機 linger 與登入政策限制，不能宣稱一般帳號可保證。
+- 以 TDD 驗證兩種管理方式、角色隔離、特殊字元、設定保留及錯誤復原；GitHub 真實 Linux runner 使用非 root 帳號從正式 Release 安裝複驗。
+
 ## 公開儲存庫與 Release 安裝（2026-09-15）
 
 - 使用者要求 GitHub 儲存庫改為公開。
