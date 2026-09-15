@@ -1,5 +1,15 @@
 # 操作與決策紀錄
 
+## 2026-09-15：免 root VPS 安裝
+
+- 重讀安裝器、測試、CI、部署與三份專案紀錄，原 7 項安裝器測試通過。
+- question 確認 systemd --user 優先、獨立 venv Supervisor 備援，依賴及 linger 限制寫入 question.md。
+- 查閱 Supervisor 官方文件及 Context7，採私人 UNIX socket、固定 4.3.0、程序群組停止與有限日誌輪替。
+- 免 root 行為測試先出現 5 個有效 RED；另修正測試 fixture 未建立空操作紀錄的問題，該 fixture 錯誤不算產品缺陷。
+- 完成使用者安裝與管理工具，追加有效 RED 發現背景程序繼承鎖描述符，關閉描述符後 8 個目標測試及全 20 個 Python 測試通過。
+- 本機只執行隔離 HOME／模擬主機命令的有限測試，沒有安裝或啟動正式本機服務。
+- CI 新增兩個隔離非 root 帳號驗收；只有 runner 準備帳號／linger 使用管理權限，安裝器及 SPM 全程一般 UID。
+
 ## 2026-09-15：公開與 Release 安裝
 
 - 使用者明確授權公開儲存庫，已透過 gh repo edit 切換並確認 PUBLIC。
