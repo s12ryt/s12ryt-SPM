@@ -932,12 +932,11 @@ async function copyToken() {
           ><p class="muted">
             Token 僅顯示一次，請妥善保存並設定於 Agent 環境變數。
           </p>
-          <label>SPM_NODE_ID<input :value="credential.id" readonly /></label
-          ><label>SPM_TOKEN<input :value="credential.token" readonly /></label
+          <label>SPM_TOKEN<input :value="credential.token" readonly /></label
           ><button @click="copyToken"><Copy :size="15" />複製 Token</button>
           <p class="muted">
-            設定 SPM_SERVER 為本面板網址，再執行 spm-agent。詳細部署方式請參考
-            README。
+            設定 SPM_SERVER 為本面板網址，搭配 SPM_TOKEN 執行 spm-agent。
+            主機 ID 由 Server 自動管理，不需填寫。詳細部署方式請參考 README。
           </p></template
         >
         <form v-else @submit.prevent="add">

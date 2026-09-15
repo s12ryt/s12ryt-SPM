@@ -40,6 +40,26 @@ function render() {
   wrappers.push(w);
   return w;
 }
+
+it("shows only the token when enrolling an Agent, with no manual node ID", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (path: string, init?: RequestInit) => {
+    if (path === "/api/session") return reply({ admin: true, public: false });
+    if (path === "/api/nodes" && init?.method === "POST")
+      return reply({ id: "server-managed-id", token: "one-time-agent-token" });
+    return reply([]);
+  }));
+  const w = render();
+  await flushPromises();
+  await w.findAll("button").find((b) => b.text().includes("新增主機"))!.trigger("click");
+  await w.get('input[placeholder="例如：台北正式環境"]').setValue("測試主機");
+  await w.get('[role="dialog"] form').trigger("submit");
+  await flushPromises();
+  const dialog = w.get('[role="dialog"]');
+  expect(dialog.text()).not.toContain("SPM_NODE_ID");
+  expect(dialog.text()).toContain("SPM_SERVER");
+  expect(dialog.get('input[readonly]').element).toHaveProperty("value", "one-time-agent-token");
+  expect(dialog.findAll('input').some((input) => input.element.value === "server-managed-id")).toBe(false);
+});
 afterEach(() => {
   wrappers.splice(0).forEach((w) => w.unmount());
   vi.useRealTimers();
