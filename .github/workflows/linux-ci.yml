@@ -1,0 +1,118 @@
+name: Linux CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux race, PostgreSQL and Agent integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: spm_ci
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: spm_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U spm_ci -d spm_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.3'
+          cache: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Runner and toolchain evidence
+        run: |
+          uname -a
+          go version
+          node --version
+          psql --version
+      - name: Install locked frontend dependencies
+        run: npm --prefix web ci
+      - name: Frontend behavior tests
+        run: npm --prefix web test
+      - name: Typecheck and build embedded frontend
+        run: npm --prefix web run build
+      - name: Go formatting and static checks
+        run: |
+          test -z "$(gofmt -l cmd internal web/embed*.go)"
+          go vet ./...
+          go mod verify
+      - name: Complete race suite with real PostgreSQL
+        env:
+          TEST_POSTGRES_URL: postgres://spm_ci:isolated-ci-only@127.0.0.1:5432/spm_ci?sslmode=disable
+        shell: bash
+        run: |
+          set -o pipefail
+          go test -race -json ./... -count=1 -timeout=5m | tee test-results.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          events = [json.loads(line) for line in Path('test-results.json').read_text().splitlines()]
+          required = {
+              ('spm/internal/store', 'TestPostgresIntegration'),
+              ('spm/internal/collector', 'TestUpload'),
+              ('spm/internal/collector', 'TestRunUploadsAndStops'),
+              ('spm/internal/server', 'TestWebhookPayloadAndFailure'),
+          }
+          passed = {(e.get('Package'), e.get('Test')) for e in events if e.get('Action') == 'pass'}
+          assert required <= passed, f'Required tests did not PASS: {required - passed}'
+          assert not any(e.get('Action') == 'skip' for e in events), 'Unexpected skipped test'
+          print('Verified: PostgreSQL and all previously blocked HTTP tests PASS; zero skips')
+          PY
+      - name: Build Linux executables
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p bin
+          go build -trimpath -ldflags='-s -w' -o bin/spm-server ./cmd/server
+          go build -trimpath -ldflags='-s -w' -o bin/spm-agent ./cmd/agent
+      - name: Real Linux Agent and server smoke
+        run: timeout 90s python3 scripts/smoke.py
+      - name: Cross-compile Linux ARM64
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          go build -trimpath -ldflags='-s -w' -o bin/spm-server-linux-arm64 ./cmd/server
+          go build -trimpath -ldflags='-s -w' -o bin/spm-agent-linux-arm64 ./cmd/agent
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-results
+          path: test-results.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Preserve verified Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: bin/spm-*
+          if-no-files-found: error
+          retention-days: 14
