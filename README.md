@@ -18,13 +18,15 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install.sh)
 ```
 
-在面板新增主機並取得 ID／Token 後，到被監控的 VPS 執行，**只安裝 Agent**：
+在面板新增主機並取得 Token 後，到被監控的 VPS 執行，**只安裝 Agent**：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install.sh) agent
 ```
 
-初次 Agent 安裝提示主程式 URL、主機 ID、Token；密碼與 Token 不會顯示或記錄在安裝輸出。也可預先 export `SPM_ADMIN_USER`／`SPM_ADMIN_PASSWORD`／`SPM_LISTEN` 或 `SPM_SERVER`／`SPM_NODE_ID`／`SPM_TOKEN` 進行非互動安裝。安裝器的 Server 預設監聽 `0.0.0.0:8080`，可預設 `SPM_LISTEN=127.0.0.1:8080` 搭配 [HTTPS 反向代理](deploy/README.md)。安裝器不修改防火牆。
+初次 Agent 安裝只提示主程式 URL 與 Token，主機 ID 由 Server 產生及保存；密碼與 Token 不會顯示或記錄在安裝輸出。也可預先 export `SPM_ADMIN_USER`／`SPM_ADMIN_PASSWORD`／`SPM_LISTEN` 或 `SPM_SERVER`／`SPM_TOKEN` 進行非互動安裝。安裝器的 Server 預設監聽 `0.0.0.0:8080`，可預設 `SPM_LISTEN=127.0.0.1:8080` 搭配 [HTTPS 反向代理](deploy/README.md)。安裝器不修改防火牆。
+
+免 ID 接入需要 Server 與 Agent 都更新至支援版本。目前正式 Release `v0.1.0` 尚不支援；新版發布前可從本分支建置驗證。指定舊版且設定缺少 ID 時，安裝器會明確拒絕，不替換現有執行檔。既有含 ID 的設定與上報方式仍相容。
 
 重跑相同指令更新至最新正式 Release，保留原設定與資料；在最後加 `--version v0.1.0` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。服務啟動檢查失敗會嘗試還原舊執行檔與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
 
@@ -51,7 +53,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/insta
 
 同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.0`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
 
-Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent 詢問主程式 URL、ID 與 Token；也能使用上述 SPM 環境變數預先設定。VPS 若限制可用連接埠，先 `export SPM_LISTEN=0.0.0.0:業者分配的連接埠`；一般帳號請使用大於 1023 的 port。
+Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent 只詢問主程式 URL 與 Token；也能使用上述 SPM 環境變數預先設定。免 ID 接入的版本要求同上。VPS 若限制可用連接埠，先 `export SPM_LISTEN=0.0.0.0:業者分配的連接埠`；一般帳號請使用大於 1023 的 port。
 
 - 執行檔與設定：`~/.local/share/spm/server/` 或 `~/.local/share/spm/agent/`；Server 資料在 `server/data/`。
 - `config.env` 權限為 `0600`，採逐行 `KEY=值` 的純文字格式，**不要替值加 shell 引號或 export**。`$`、引號、空白和反斜線皆為原值，不會執行 shell 展開。修改後重啟；可自行加入 `DATABASE_URL=完整URL`。
@@ -112,11 +114,10 @@ $env:SPM_ADMIN_PASSWORD = Read-Host '管理員密碼（12–72 bytes）' -MaskIn
 .\bin\spm-server.exe --listen 127.0.0.1:8080 --data .\data
 ```
 
-開啟 `http://127.0.0.1:8080`，登入後點「新增主機」。記下主機 ID 與只顯示一次的 Token，然後在被監控的主機啟動 Agent：
+開啟 `http://127.0.0.1:8080`，登入後點「新增主機」。保存只顯示一次的 Token，然後在被監控的主機啟動 Agent；主機 ID 由 Server 自動產生及保存，不需複製：
 
 ```sh
 export SPM_SERVER=https://monitor.example.com
-export SPM_NODE_ID='從面板取得的主機 ID'
 read -rs -p 'Agent Token: ' SPM_TOKEN; echo
 export SPM_TOKEN
 ./bin/spm-agent
@@ -124,7 +125,6 @@ export SPM_TOKEN
 
 ```powershell
 $env:SPM_SERVER = 'https://monitor.example.com'
-$env:SPM_NODE_ID = '從面板取得的主機 ID'
 $env:SPM_TOKEN = Read-Host 'Agent Token' -MaskInput
 .\bin\spm-agent.exe
 ```
@@ -141,10 +141,12 @@ $env:SPM_TOKEN = Read-Host 'Agent Token' -MaskInput
 | `SPM_DATA_DIR` | SQLite 與資料庫切換設定目錄；`--data` 可覆蓋 | `data` |
 | `DATABASE_URL` | 唯一的正式資料庫環境變數，完整 URL | 未設定時使用 SQLite |
 | `SPM_SERVER` | Agent 連線的主程式 URL；`--server` 可覆蓋 | 必填 |
-| `SPM_NODE_ID` | Agent 主機 ID；`--id` 可覆蓋 | 必填 |
+| `SPM_NODE_ID` | 舊版相容用主機 ID；`--id` 可覆蓋，新接入無需設定 | 不設定 |
 | `SPM_TOKEN` | 該主機的 Agent Token | 必填 |
 
 程式不會自動讀取 `.env`。請由 shell、systemd 或部署工具載入環境變數。修改管理員環境變數後重啟生效；登入 Session 儲存在記憶體中，重啟需重新登入。
+
+每台主機使用自己的 Token，請勿將同一個 Token 複製到多台 Agent。Server 保存 ID 與 Token 雜湊的對應，重啟後仍可辨識原主機；更換 Token 不會更換 ID 或歷史，刪除主機則撤銷接入。更新既有部署時先更新 Server，再更新 Agent；原設定中的 ID 可保留。
 
 Session 有效期為 24 小時；逾期時前端會清除管理資料。前端請求最多等待 10 秒。密碼驗證同時處理一個登入請求，忙碌時回傳 429，稍後可重試。主程式初始化或監聽失敗會以非零狀態結束，供服務管理工具判斷。
 
