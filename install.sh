@@ -37,14 +37,31 @@ main() (
     export LC_ALL=C
     local_role=server
     version=''
+    server_set=false; token_set=false
     if [[ ${1:-} == agent || ${1:-} == server ]]; then local_role=$1; shift; fi
     while (($#)); do
         case "$1" in
             --version) [[ $# -ge 2 ]] || fail '--version 需要版本'; version=$2; shift 2 ;;
-            --help|-h) printf '用法：bash install.sh [agent|server] [--version vX.Y.Z]\n預設只安裝 Server；agent 只安裝 Agent。需要 Linux、systemd、root。\n'; exit 0 ;;
-            *) fail "不支援的參數：$1" ;;
+            --server|--token)
+                option=$1
+                [[ $# -ge 2 && "$2" != --* ]] || fail "$option 需要值。"
+                value=$2; shift 2
+                case "$option" in --server) SPM_SERVER=$value; server_set=true ;; --token) SPM_TOKEN=$value; token_set=true ;; esac ;;
+            --server=*) SPM_SERVER=${1#*=}; server_set=true; shift ;;
+            --token=*) SPM_TOKEN=${1#*=}; token_set=true; shift ;;
+            --help|-h) printf '用法：bash install.sh [agent|server] [--version vX.Y.Z]\nAgent 參數：--server URL --token TOKEN（明確提供時更新既有設定）\n預設只安裝 Server；agent 只安裝 Agent。需要 Linux、systemd、root。\n'; exit 0 ;;
+            *) fail '不支援的參數；請查看 --help。' ;;
         esac
     done
+    if [[ "$server_set" == true || "$token_set" == true ]]; then
+        [[ "$local_role" == agent ]] || fail '--server／--token 僅供 agent 使用。'
+    fi
+    if [[ "$server_set" == true ]]; then
+        [[ "$SPM_SERVER" =~ ^https?://[^/[:space:]]+(/[^[:space:]]*)?$ && "$SPM_SERVER" != *['?#@']* ]] || fail '--server 必須為有效 http(s) URL，不能包含帳密、query 或 fragment。'
+    fi
+    if [[ "$token_set" == true ]]; then
+        [[ -n "$SPM_TOKEN" && "$SPM_TOKEN" != *$'\n'* && "$SPM_TOKEN" != *$'\r'* ]] || fail '--token 不得空白或包含換行。'
+    fi
     [[ -z "$version" || "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail '版本格式必須為 vX.Y.Z。'
     [[ $(uname -s) == Linux ]] || fail '只支援 Linux VPS。'
     case $(uname -m) in
@@ -64,6 +81,19 @@ main() (
     work=$(mktemp -d)
     trap 'rm -rf -- "$work"' EXIT
     umask 077
+    config_update=false
+    if [[ -f "$config" && ( "$server_set" == true || "$token_set" == true ) ]]; then
+        {
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                [[ "$server_set" != true || "$line" != SPM_SERVER=* ]] || continue
+                [[ "$token_set" != true || "$line" != SPM_TOKEN=* ]] || continue
+                printf '%s\n' "$line"
+            done < "$config"
+            if [[ "$server_set" == true ]]; then write_setting SPM_SERVER "$SPM_SERVER"; fi
+            if [[ "$token_set" == true ]]; then write_setting SPM_TOKEN "$SPM_TOKEN"; fi
+        } > "$work/config"
+        config_update=true
+    fi
 
     if [[ ! -f "$config" ]]; then
         if [[ "$local_role" == server ]]; then
@@ -101,7 +131,7 @@ main() (
     fi
     if [[ "$local_role" == agent && "$version" == v0.1.0 ]]; then
         effective_config=$config
-        [[ -f "$effective_config" ]] || effective_config="$work/config"
+        [[ ! -f "$work/config" ]] || effective_config="$work/config"
         grep -Eq '^SPM_NODE_ID=("[a-zA-Z0-9_-]+"|[a-zA-Z0-9_-]+)$' "$effective_config" ||
             fail 'v0.1.0 不支援免 ID 接入；請使用支援此功能的新版 Server 與 Agent Release。未變更既有安裝。'
     fi
@@ -127,6 +157,7 @@ main() (
     if [[ ! -f "$config" ]]; then install -m 0600 "$work/config" "$config"; fi
     if [[ -f "$destination" ]]; then cp -p "$destination" "$work/previous"; fi
     if [[ -f "$unit" ]]; then cp -p "$unit" "$work/previous-unit"; fi
+    if [[ "$config_update" == true ]]; then cp -p "$config" "$work/previous-config"; fi
     {
         printf '[Unit]\nDescription=SPM %s\nWants=network-online.target\nAfter=network-online.target\n\n' "$local_role"
         printf '[Service]\nType=simple\nUser=spm\nGroup=spm\n'
@@ -142,6 +173,9 @@ main() (
     rollback() {
         printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
         systemctl stop "$service" || true
+        if [[ -f "$work/previous-config" ]]; then
+            cp -p "$work/previous-config" "$config.new" && mv -f "$config.new" "$config"
+        fi
         if [[ -f "$work/previous-unit" ]]; then
             cp -p "$work/previous-unit" "$unit.new" && mv -f "$unit.new" "$unit"
         else
@@ -166,6 +200,9 @@ main() (
     trap 'cleanup' EXIT
     install -m 0755 "$work/$asset" "$destination.new"
     mv -f "$destination.new" "$destination"
+    if [[ "$config_update" == true ]]; then
+        install -m 0600 "$work/config" "$config.new"; mv -f "$config.new" "$config"
+    fi
     install -m 0644 "$work/unit" "$unit"
     started=true
     if ! systemctl daemon-reload || ! systemctl enable "$service" || ! systemctl restart "$service"; then started=false; fi

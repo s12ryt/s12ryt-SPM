@@ -76,6 +76,77 @@ esac''')
     def installed(self, role='server'):
         return self.root / f'opt/spm/spm-{role}'
 
+    def agent_config(self):
+        return self.root / 'etc/spm/agent.env'
+
+    def test_agent_connection_flags_override_env_and_preserve_other_settings(self):
+        token = 'cli "quoted" \\ $HOME $(touch ignored) token'
+        args = ('agent', '--version', 'v0.1.1', '--server', 'https://cli.example.com/monitor', '--token', token)
+        self.assertEqual(self.run_installer(*args, SPM_NODE_ID=''), 0, self.output)
+        config = self.agent_config()
+        text = config.read_text()
+        self.assertIn('https://cli.example.com/monitor', text)
+        self.assertNotIn(self.env['SPM_SERVER'], text)
+        self.assertNotIn(self.env['SPM_TOKEN'], text)
+        self.assertNotIn('SPM_NODE_ID', text)
+        self.assertNotIn(token, self.output)
+        self.assertEqual(config.stat().st_mode & 0o777, 0o600)
+        original = config.read_bytes()
+        self.assertEqual(self.run_installer('agent', '--version', 'v0.1.1'), 0, self.output)
+        self.assertEqual(config.read_bytes(), original)
+        with config.open('a') as out:
+            out.write('# keep custom settings\nSPM_EXTRA=literal $(touch ignored)\n')
+        self.assertEqual(self.run_installer('agent', '--version', 'v0.1.1', '--server', 'https://moved.example.com'), 0, self.output)
+        changed = config.read_text()
+        self.assertIn('https://moved.example.com', changed)
+        self.assertNotIn('https://cli.example.com/monitor', changed)
+        self.assertIn('SPM_EXTRA=literal $(touch ignored)', changed)
+        self.assertEqual([line for line in changed.splitlines() if line.startswith('SPM_TOKEN=')],
+                         [line for line in text.splitlines() if line.startswith('SPM_TOKEN=')])
+        if hasattr(self, 'role_dir'):
+            self.installed('agent').write_text('#!/bin/bash\nprintf "%s" "$SPM_TOKEN"\n')
+            result = subprocess.run(['bash', str(self.role_dir('agent') / 'run')], env=self.env,
+                                    capture_output=True, text=True, check=True, timeout=5)
+            self.assertEqual(result.stdout, token)
+        else:
+            self.assertIn('SPM_TOKEN="cli \\"quoted\\" \\\\ $HOME $(touch ignored) token"', text)
+        self.assertEqual(self.run_installer('agent', '--version', 'v0.1.1', '--token=rotated-cli-token'), 0, self.output)
+        rotated = config.read_text()
+        self.assertIn('https://moved.example.com', rotated)
+        self.assertIn('rotated-cli-token', rotated)
+        self.assertEqual(rotated.count('SPM_TOKEN='), 1)
+        self.assertNotIn('rotated-cli-token', self.output)
+
+    def test_failed_connection_update_restores_config_and_binary(self):
+        self.assertEqual(self.run_installer('agent', '--version', 'v0.1.1', SPM_NODE_ID=''), 0, self.output)
+        config = self.agent_config()
+        original = config.read_bytes()
+        self.installed('agent').write_bytes(b'previous agent')
+        for failure in ('FAIL_DOWNLOAD', 'FAIL_SERVICE'):
+            with self.subTest(failure=failure):
+                self.assertNotEqual(self.run_installer('agent', '--version', 'v0.1.1', '--server',
+                                                       'https://moved.example.com', '--token', 'replacement-token',
+                                                       **{failure: '1'}), 0)
+                self.assertEqual(config.read_bytes(), original)
+                self.assertEqual(self.installed('agent').read_bytes(), b'previous agent')
+                self.assertNotIn('replacement-token', self.output)
+
+    def test_connection_flags_reject_invalid_values_without_disclosing_tokens(self):
+        secret = 'secret-argument-token'
+        for args in [('agent', '--server'), ('agent', '--token'), ('agent', '--token', ''),
+                     ('agent', '--server', ''), ('agent', '--server', 'file:///etc/passwd'),
+                     ('agent', '--token', 'line1\nline2'),
+                     ('server', '--token', secret), ('--token', secret),
+                     ('agent', '--token', '--server', 'https://monitor.example.com')]:
+            with self.subTest(args=args):
+                self.assertNotEqual(self.run_installer(*args), 0)
+                self.assertFalse(self.installed('agent').exists())
+                self.assertFalse(self.installed().exists())
+                self.assertNotIn(secret, self.output)
+        self.assertEqual(self.run_installer('--help'), 0, self.output)
+        self.assertIn('--server', self.output)
+        self.assertIn('--token', self.output)
+
     def test_default_installs_only_server_from_pinned_release(self):
         self.assertEqual(self.run_installer(), 0, self.output)
         self.assertEqual(self.installed().read_bytes(), self.payload)
