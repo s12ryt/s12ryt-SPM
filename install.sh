@@ -122,8 +122,6 @@ main() (
     if [[ ! -f "$config" ]]; then install -m 0600 "$work/config" "$config"; fi
     if [[ -f "$destination" ]]; then cp -p "$destination" "$work/previous"; fi
     if [[ -f "$unit" ]]; then cp -p "$unit" "$work/previous-unit"; fi
-    install -m 0755 "$work/$asset" "$destination.new"
-    mv -f "$destination.new" "$destination"
     {
         printf '[Unit]\nDescription=SPM %s\nWants=network-online.target\nAfter=network-online.target\n\n' "$local_role"
         printf '[Service]\nType=simple\nUser=spm\nGroup=spm\n'
@@ -133,8 +131,28 @@ main() (
         printf 'EnvironmentFile=/etc/spm/%s.env\nExecStart=/opt/spm/spm-%s\n' "$local_role" "$local_role"
         printf 'Restart=always\nRestartSec=5\nTimeoutStopSec=15\nNoNewPrivileges=true\nUMask=0077\n\n[Install]\nWantedBy=multi-user.target\n'
     } > "$work/unit"
-    install -m 0644 "$work/unit" "$unit"
     service="spm-$local_role"
+    rollback() {
+        printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
+        systemctl stop "$service" || true
+        if [[ -f "$work/previous-unit" ]]; then
+            cp -p "$work/previous-unit" "$unit.new" && mv -f "$unit.new" "$unit"
+        else
+            rm -f -- "$unit"
+        fi
+        if [[ -f "$work/previous" ]]; then
+            cp -p "$work/previous" "$destination.new" && mv -f "$destination.new" "$destination"
+        else
+            rm -f -- "$destination"
+        fi
+        systemctl daemon-reload || true
+        [[ ! -f "$work/previous" ]] || systemctl restart "$service" || true
+    }
+    replacing=true
+    trap 'result=$?; if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi; rm -rf -- "$work"; exit "$result"' EXIT
+    install -m 0755 "$work/$asset" "$destination.new"
+    mv -f "$destination.new" "$destination"
+    install -m 0644 "$work/unit" "$unit"
     started=true
     if ! systemctl daemon-reload || ! systemctl enable "$service" || ! systemctl restart "$service"; then started=false; fi
     if [[ "$started" == true ]]; then
@@ -142,19 +160,9 @@ main() (
         systemctl is-active --quiet "$service" || started=false
     fi
     if [[ "$started" != true ]]; then
-        if [[ -f "$work/previous-unit" ]]; then
-            install -m 0644 "$work/previous-unit" "$unit"
-            systemctl daemon-reload || true
-        fi
-        if [[ -f "$work/previous" ]]; then
-            install -m 0755 "$work/previous" "$destination.new"
-            mv -f "$destination.new" "$destination"
-            systemctl restart "$service" || true
-        else
-            systemctl stop "$service" || true
-        fi
-        fail "服務啟動失敗；已還原原執行檔（若存在）。請查看 journalctl -u $service。"
+        fail "服務啟動失敗。請查看 journalctl -u $service。"
     fi
+    replacing=false
     printf '已安裝 %s %s；設定：/etc/spm/%s.env\n' "$service" "$version" "$local_role"
     if [[ "$local_role" == server ]]; then
         printf '首次安裝預設：http://VPS_IP:8080（SPM_LISTEN 可調）；對外使用請配置 HTTPS。\n'

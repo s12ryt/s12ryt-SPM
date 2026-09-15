@@ -142,6 +142,34 @@ esac''')
         self.assertEqual(self.installed().read_bytes(), b'old binary')
         self.assertEqual(unit.read_text(), '[Service]\nEnvironment=EXISTING=1\n')
 
+    def test_file_install_failure_restores_previous_release(self):
+        self.assertEqual(self.run_installer(), 0, self.output)
+        self.installed().write_bytes(b'previous binary')
+        unit = self.root / 'etc/systemd/system/spm-server.service'
+        unit.write_text('[Service]\nEnvironment=ORIGINAL=1\n')
+        real_install = shutil.which('install')
+        self.command('install', f'''target="${{@: -1}}"
+if [[ "$target" == *.service && ! -f "$FIXTURE/write-failed" ]]; then
+    touch "$FIXTURE/write-failed"
+    printf 'partial unit' > "$target"
+    exit 73
+fi
+exec "{real_install}" "$@"''')
+        self.assertEqual(self.run_installer(), 73, self.output)
+        self.assertTrue((self.base / 'write-failed').exists(), self.output)
+        self.assertEqual(self.installed().read_bytes(), b'previous binary')
+        self.assertEqual(unit.read_text(), '[Service]\nEnvironment=ORIGINAL=1\n')
+
+    def test_failed_first_install_can_retry_with_preserved_config(self):
+        self.assertNotEqual(self.run_installer(FAIL_SERVICE='1'), 0)
+        self.assertFalse(self.installed().exists())
+        self.assertFalse((self.root / 'etc/systemd/system/spm-server.service').exists())
+        config = self.root / 'etc/spm/server.env'
+        original = config.read_bytes()
+        self.assertEqual(self.run_installer(SPM_ADMIN_PASSWORD=''), 0, self.output)
+        self.assertEqual(config.read_bytes(), original)
+        self.assertEqual(self.installed().read_bytes(), self.payload)
+
     def test_environment_values_are_quoted_without_shell_execution(self):
         password = 'safe password " $HOME \\ still-secret'
         self.assertEqual(self.run_installer(SPM_ADMIN_PASSWORD=password), 0, self.output)
