@@ -136,6 +136,9 @@ Smoke 測試會建立暫存資料庫、啟動主程式與 Agent，驗證真實�
 選用 PostgreSQL 整合測試：在測試環境設定 `TEST_POSTGRES_URL`，執行 `go test ./internal/store -run TestPostgresIntegration -v -count=1`。這個變數僅由測試讀取，需要建立 schema 的權限；測試使用隨機 schema 並於結束時刪除，涵蓋 SQLite → PostgreSQL → SQLite、歷史分桶與通知資料。未提供連線時明確 skip。
 
 初次驗證結果見 [agent/validation.md](agent/validation.md)，後續仔細檢查的修復與最新結果見 [深入稽核紀錄](agent/audit-2026-09-15.md)，需求驗收見 [agent/question.md](agent/question.md)。
-# GitHub Linux CI
+
+## GitHub Linux CI
 
 [Linux CI](https://github.com/s12ryt/s12ryt-SPM/actions/workflows/linux-ci.yml) 在推送 main、Pull Request 或手動觸發時執行。使用 Ubuntu 24.04 runner 與獨立 PostgreSQL 17 service，執行前端測試／型別／建置、Go vet、完整 race（不排除 HTTP 測試）、PostgreSQL 雙向搬移及真實 Linux Agent 上報。CI 拒絕任何略過的測試，並保留測試 JSON 與 Linux 執行檔 14 天；ARM64 產物僅交叉編譯。
+
+[已成功的完整執行](https://github.com/s12ryt/s12ryt-SPM/actions/runs/34950376689)及 [CI 驗證紀錄](agent/ci-validation.md)包含提交版本與實測範圍；原本本機 PostgreSQL／HTTP race 的待驗證項目已由遠端測試補足。
