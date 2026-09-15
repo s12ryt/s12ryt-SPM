@@ -22,6 +22,8 @@ def main():
     env = os.environ.copy()
     env.pop('DATABASE_URL', None)
     env.pop('SPM_NODE_ID', None)
+    env.pop('SPM_SERVER', None)
+    env.pop('SPM_TOKEN', None)
     env.update(SPM_ADMIN_USER='admin', SPM_ADMIN_PASSWORD='local-smoke-test-only', SPM_LISTEN=f'127.0.0.1:{args.port}')
     base = f'http://127.0.0.1:{args.port}'
     jar = http.cookiejar.CookieJar()
@@ -53,8 +55,8 @@ def main():
                 assert error.code == 401
             api('/api/login', {'username': 'admin', 'password': 'local-smoke-test-only'})
             credential = api('/api/nodes', {'name': '本機 Windows 實測' if os.name == 'nt' else '本機 Linux 實測'})
-            agent_env = env | {'SPM_SERVER': base, 'SPM_TOKEN': credential['token']}
-            processes.append(subprocess.Popen([str(root / 'bin' / ('spm-agent' + suffix))], env=agent_env))
+            processes.append(subprocess.Popen([str(root / 'bin' / ('spm-agent' + suffix)),
+                                                '--server', base, '--token', credential['token']], env=env))
             deadline = time.monotonic() + 20
             while True:
                 nodes = api('/api/nodes')
@@ -70,7 +72,7 @@ def main():
             settings = api('/api/settings')['settings']
             settings['public'] = True
             api('/api/settings', settings, 'PUT')
-            print('PASS: private access, login, real Agent upload without node ID, CPU rate, history, token redaction, settings', flush=True)
+            print('PASS: private access, login, real Agent upload using --server/--token without node ID, CPU rate, history, token redaction, settings', flush=True)
             if args.serve_seconds:
                 print(f'Browser fixture available at {base}; automatic cleanup in {min(args.serve_seconds, 900)} seconds', flush=True)
                 time.sleep(min(args.serve_seconds, 900))
