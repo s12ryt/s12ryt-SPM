@@ -14,11 +14,11 @@ import (
 
 func main() {
 	endpoint := flag.String("server", os.Getenv("SPM_SERVER"), "Server URL")
-	id := flag.String("id", os.Getenv("SPM_NODE_ID"), "Node ID")
+	id := flag.String("id", os.Getenv("SPM_NODE_ID"), "Optional legacy node ID")
 	flag.Parse()
 	token := os.Getenv("SPM_TOKEN")
-	if *endpoint == "" || *id == "" || token == "" {
-		log.Fatal("SPM_SERVER, SPM_NODE_ID and SPM_TOKEN are required")
+	if *endpoint == "" || token == "" {
+		log.Fatal("SPM_SERVER and SPM_TOKEN are required")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
