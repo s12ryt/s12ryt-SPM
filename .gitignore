@@ -1,0 +1,12 @@
+/data/
+/bin/
+/web/node_modules/
+/web/dist/
+/web/coverage/
+/.env
+*.log
+*.test
+coverage.out
+/.playwright-mcp/
+/spm-*.png
+/test-results.json
