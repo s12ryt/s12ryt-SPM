@@ -9,6 +9,11 @@
 - 完成使用者安裝與管理工具，追加有效 RED 發現背景程序繼承鎖描述符，關閉描述符後 8 個目標測試及全 20 個 Python 測試通過。
 - 本機只執行隔離 HOME／模擬主機命令的有限測試，沒有安裝或啟動正式本機服務。
 - CI 新增兩個隔離非 root 帳號驗收；只有 runner 準備帳號／linger 使用管理權限，安裝器及 SPM 全程一般 UID。
+- 首輪 run 34957094027 因一般帳號無法讀取 runner checkout 而未進入安裝器；複製兩個必要檔案至測試帳號家目錄，不改 runner 私人目錄權限。
+- 修復提交 3670974e18445f97ceb6358aad5c60a8abe52fdb；第二輪 run 34957308410 三個 job 全部 success。
+- systemd／Supervisor job 均以 UID 1002 真實下載正式 v0.1.0，完成角色隔離、秘密原值、兩筆真實樣本、崩潰重啟、啟停、更新保留與檔案權限驗證；finally 與 workflow 均清理測試服務。
+- 讀取 job 日誌確認兩種管理器 PASS；同次完整 Go race／PostgreSQL、20 項 Python、12 項 Vue、靜態檢查、binary smoke 及 ARM64 交叉建置通過。
+- 公開 raw 的 install-user.sh 可未登入讀取；新增 user-install-validation.md，收尾為文件更新，不重新發布或覆寫 v0.1.0。
 
 ## 2026-09-15：公開與 Release 安裝
 
