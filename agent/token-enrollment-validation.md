@@ -34,7 +34,14 @@
 
 ## 遠端與發布
 
-本輪完整 Linux CI 待推送後記錄。主 job 將驗證本次編譯產物的免 ID 上報；兩種非 root job 仍使用已發布 v0.1.0 及原 ID 設定，驗證舊版相容，不冒充免 ID Release 驗收。
+11 筆提交已推送至 `7359ffc8fdc683bb5bbccb41ec1007836f3f02d5`，[本輪 Linux CI](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35028161412) 三個 job 全部成功：
+
+- [Linux race／PostgreSQL／Agent](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35028161412/job/104580072991)：完整 Go race、真實 PostgreSQL 17、15 項 Vue、28 項 Python、型別／建置／靜態檢查、Linux 免 ID 執行檔上報與 ARM64 交叉建置通過。
+- [systemd 使用者安裝](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35028161412/job/104580073111)、[Supervisor 使用者安裝](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35028161412/job/104580073192)：UID 1002 一般帳號安裝正式 v0.1.0，驗證舊設定、角色隔離、真實樣本、崩潰重啟、啟停及更新保留。
+- 主 job 日誌確認 `TestAgentStartsWithoutNodeID`、`TestUploadWithoutNodeID`、`TestTokenOnlyIngestLifecycle`、`TestPostgresIntegration` 全部 PASS；結果檢查器確認零測試案例略過。
+- 新編譯執行檔日誌：`PASS: private access, login, real Agent upload without node ID, CPU rate, history, token redaction, settings`。
+
+兩種非 root job 使用 v0.1.0 及原 ID 設定，屬於舊版相容驗證；本次免 ID Linux 行為由主 job 新編譯產物實測，不冒充免 ID Release 安裝驗收。
 
 目前最新正式版本仍為 v0.1.0，不包含本功能。免 ID 需要先更新 Server 再更新 Agent；只更新新 Agent 而使用舊 Server 會上報失敗。Release smoke 已準備下一版正式發布後的免 ID 安裝驗收，但本輪尚未執行它或發布新版本。
 
