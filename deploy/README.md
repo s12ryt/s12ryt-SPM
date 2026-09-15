@@ -8,7 +8,7 @@
 
 以下操作由管理系統的人員在目標 VPS 執行。採一般 `spm` 帳號執行主程式與 Agent；收集一般主機資訊不需要 root。
 
-新版 Agent 範本只填 `SPM_SERVER` 與 `SPM_TOKEN`，ID 由 Server 管理。先更新 Server，再更新 Agent；既有含 ID 的設定可保留。正式 v0.1.0 尚不支援免 ID，須使用支援此功能的新版雙端執行檔，詳見 [版本要求](../README.md#vps-一鍵安裝)。
+Agent 範本只填 `SPM_SERVER` 與 `SPM_TOKEN`，ID 由 Server 管理。免 ID 接入已於正式 [v0.1.1](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.1) 提供；先更新 Server，再更新 Agent，既有含 ID 的設定可保留。詳見 [版本要求](../README.md#vps-一鍵安裝)與[正式免 ID 安裝驗收](../agent/token-enrollment-validation.md)。
 
 1. 建立專用 `spm` 使用者，將對應 CPU 架構的執行檔安裝成 `/opt/spm/spm-server` 或 `/opt/spm/spm-agent`，權限 `0755`。
 2. 建立 `/etc/spm`，將環境範本另存為 `server.env`／`agent.env` 並填入自己的值；設定檔權限 `0600`、擁有者 root。

@@ -26,9 +26,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/insta
 
 初次 Agent 安裝只提示主程式 URL 與 Token，主機 ID 由 Server 產生及保存；密碼與 Token 不會顯示或記錄在安裝輸出。也可預先 export `SPM_ADMIN_USER`／`SPM_ADMIN_PASSWORD`／`SPM_LISTEN` 或 `SPM_SERVER`／`SPM_TOKEN` 進行非互動安裝。安裝器的 Server 預設監聽 `0.0.0.0:8080`，可預設 `SPM_LISTEN=127.0.0.1:8080` 搭配 [HTTPS 反向代理](deploy/README.md)。安裝器不修改防火牆。
 
-免 ID 接入需要 Server 與 Agent 都更新至支援版本。目前正式 Release `v0.1.0` 尚不支援；新版發布前可從本分支建置驗證。指定舊版且設定缺少 ID 時，安裝器會明確拒絕，不替換現有執行檔。既有含 ID 的設定與上報方式仍相容。
+免 ID 接入已於正式 [v0.1.1](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.1) 提供，請先更新 Server，再更新 Agent。正式下載後的安裝與上報已通過[驗收](agent/token-enrollment-validation.md)。指定不支援免 ID 的 v0.1.0 且設定缺少 ID 時，安裝器會明確拒絕，不替換現有執行檔。既有含 ID 的設定與上報方式仍相容。
 
-重跑相同指令更新至最新正式 Release，保留原設定與資料；在最後加 `--version v0.1.0` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。服務啟動檢查失敗會嘗試還原舊執行檔與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
+重跑相同指令更新至最新正式 Release，保留原設定與資料；在最後加 `--version v0.1.1` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。服務啟動檢查失敗會嘗試還原舊執行檔與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
 
 - 執行檔：`/opt/spm/spm-server` 或 `/opt/spm/spm-agent`。
 - 設定：`/etc/spm/server.env` 或 `/etc/spm/agent.env`，root 擁有、權限 `0600`。更新不覆蓋，修改後重啟對應服務。
@@ -51,7 +51,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/insta
 bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install-user.sh) agent
 ```
 
-同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.0`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
+同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.1`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
 
 Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent 只詢問主程式 URL 與 Token；也能使用上述 SPM 環境變數預先設定。免 ID 接入的版本要求同上。VPS 若限制可用連接埠，先 `export SPM_LISTEN=0.0.0.0:業者分配的連接埠`；一般帳號請使用大於 1023 的 port。
 
