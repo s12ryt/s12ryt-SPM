@@ -6,8 +6,9 @@
 - [x] GitHub 儲存庫切換為 PUBLIC。
 - [x] TDD 安裝器：7 組測試，角色／平台／版本／校驗／設定保留／秘密／失敗回復。
 - [x] 重用完整 CI 建置 Release，加入真實 Release systemd 安裝驗收。
-- [ ] 推送並執行首版 v0.1.0，修正遠端驗收揭露問題。
-- [ ] 更新 Release 實測證據與完成報告。
+- [x] 推送並執行首版 v0.1.0，Release workflow 首次成功。
+- [x] 從正式 Release 真實安裝 systemd、上報與更新保留驗收成功。
+- [x] 更新 `release-validation.md`，保存資產、提交與遠端證據。
 
 ## 2026-09-15：GitHub 真實 Linux CI
 
@@ -54,6 +55,7 @@
 
 - [x] GitHub Ubuntu runner 上 PostgreSQL 17 實例的 `TestPostgresIntegration` 通過。
 - [x] GitHub Ubuntu runner 上含 HTTP 的全套 race 通過，沒有排除案例。
-- [ ] ARM64 真機、systemd 與外部 Telegram／Webhook 投遞驗證；本次完成交叉編譯、範本與模擬測試。
+- [x] Ubuntu amd64 真實 Release systemd 安裝／更新與 Agent 上報，見 `release-validation.md`。
+- [ ] ARM64 真機與外部 Telegram／Webhook 投遞驗證；目前完成交叉編譯與模擬測試。
 
 本輪交付為 7 個工作週期：原 6 個架構／實作／整合週期，加 1 個回歸與交付收尾週期。限制詳見 `validation.md`。

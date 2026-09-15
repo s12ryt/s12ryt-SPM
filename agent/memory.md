@@ -8,6 +8,10 @@
 - WSL 隔離安裝測試只模擬網路及主機服務命令，並寫入暫存根目錄，沒有修改本機 /etc、/opt 或啟動長駐服務。
 - 下載 Debian shellcheck 套件到系統暫存並解壓執行，沒有系統安裝或提權。ShellCheck、bash -n、12 項 Python 測試及 actionlint 通過。
 - Release workflow 重用完整 CI，發布後直接下載正式 Release 驗證 systemd、角色隔離、特殊字元密碼及真實 Agent；遠端結果待記錄。
+- 提交 7c20ccb0a98da5fb81536d936993dcf10e620aeb 已推 main 與 v0.1.0 標籤；Release run 34953718316、main CI run 34953715108 均 success。
+- v0.1.0 正式發布四個 Linux 執行檔與 SHA256SUMS；發行頁非草稿、非預發布。
+- publish job 真實從公開 Release 下載並完成 systemd 安裝，驗證最新版本解析、角色隔離、特殊字元密碼、Agent 兩筆真實樣本及更新保留資料；finally 停用／停止測試服務。
+- 公開 raw 安裝腳本可未登入讀取。新增 release-validation.md，修正 systemd 歷史限制，收尾僅文件提交不更動已發布產物。
 
 ## 2026-09-15：GitHub CI
 
