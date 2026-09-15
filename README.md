@@ -35,7 +35,42 @@ bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/insta
 
 `bash (curl ...)` 並非有效 Bash 語法；上述 `<(...)` 會把下載的腳本交給 Bash。
 
-## 建置
+## 沒有 root 的 VPS
+
+以一般帳號執行下列指令，預設只安裝 Server：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install-user.sh)
+```
+
+只安裝 Agent：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install-user.sh) agent
+```
+
+同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.0`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
+
+Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent 詢問主程式 URL、ID 與 Token；也能使用上述 SPM 環境變數預先設定。VPS 若限制可用連接埠，先 `export SPM_LISTEN=0.0.0.0:業者分配的連接埠`；一般帳號請使用大於 1023 的 port。
+
+- 執行檔與設定：`~/.local/share/spm/server/` 或 `~/.local/share/spm/agent/`；Server 資料在 `server/data/`。
+- `config.env` 權限為 `0600`，採逐行 `KEY=值` 的純文字格式，**不要替值加 shell 引號或 export**。`$`、引號、空白和反斜線皆為原值，不會執行 shell 展開。修改後重啟；可自行加入 `DATABASE_URL=完整URL`。
+- 重跑安裝指令保留管理方式、設定與資料，啟動失敗嘗試還原舊執行檔與服務設定；更新前仍建議備份資料。
+- Supervisor 只使用私人 UNIX socket，不開放控制網路埠；日誌自動輪替。Server／Agent 各有獨立服務，停止其中一端不影響另一端。
+
+服務管理指令（Agent 將 `server` 改成 `agent`）：
+
+```bash
+~/.local/bin/spm-user server status
+~/.local/bin/spm-user server logs
+~/.local/bin/spm-user server restart
+~/.local/bin/spm-user server stop
+~/.local/bin/spm-user server start
+```
+
+`systemd --user` 會啟用登入時啟動；登出後持續執行及開機啟動需主機允許 linger。Supervisor 會在背景管理與自動重啟程式，但本安裝器不改 crontab；VPS 重開機後請重新執行 `start`。業者若強制清理登出工作階段，外部程序管理器也無法保證存活，需使用業者提供的持續執行機制。
+
+## 從原始碼建置
 
 需求：Go 1.26 以上、Node.js 22.12 以上及 npm。已在 Go 1.26.3、Node.js 24.11.1 驗證。Node.js 僅供建置前端，正式執行時不需要。
 
