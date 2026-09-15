@@ -1,5 +1,17 @@
 # 任務歷史
 
+## 2026-09-16：Agent 參數配置
+
+- [x] 確認一鍵安裝與啟動均支援 --server／--token，決策寫入 question.md。
+- [x] Agent 參數與 help 先出現 3 個有效 RED；實作 Token 參數、環境覆蓋及明確空值拒絕。
+- [x] 兩安裝器先出現 4 個有效 RED；支援參數、指定欄位更新及原設定回復。
+- [x] 驗證特殊字元原值、設定權限、Token 不輸出、無參數保留及下載／啟動失敗回復。
+- [x] Go 全套／vet／模組驗證、34 項 Python、Bash 語法與 ShellCheck 通過。
+- [x] Windows 真實 Agent 僅用命令列網址與 Token 上報，已清理測試程序。
+- [x] 主代理自行複查，更新使用範例、依賴與 agent-arguments-validation.md。
+- [ ] 提交推送並確認本輪完整 Linux CI。
+- [ ] 確認新版執行檔發布方式，保存最終交付證據。
+
 ## 2026-09-16：Agent 免填主機 ID
 
 - [x] 使用者要求 ID 由 Server 自行產生與保管，更新 question.md 驗收。

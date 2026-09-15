@@ -1,5 +1,16 @@
 # 操作與決策紀錄
 
+## 2026-09-16：Agent 連線參數
+
+- 依使用者「1，但是 token 也要」確認兩種安裝器與 Agent 啟動均使用 --server／--token；讀取既有入口、安裝器、測試、部署與歷史，寫入 question.md。
+- Agent 原有 --server，新增 --token。先以 2 個上報案例及 help 案例重現缺失；參數明確提供時覆蓋環境，預設 help 不帶出環境 Token，空值不回退。
+- 兩安裝器的正常參數／help 共 4 例先 RED；完成解析、優先順序、只更新指定欄位與交易失敗還原設定。下載／啟動失敗回復首測即過，列為回歸而非獨立缺陷 RED。
+- 設定重寫只處理指定 KEY，不 source 或執行內容，保留其他行與舊 ID；root 採 EnvironmentFile 跳脫，免 root 採純文字原值，維持 0600。文件說明改接不同 Server 時舊 ID 的處理。
+- Go 全套、vet、mod verify、34 項 Python（root 14、免 root 15、檢查器 5）、Bash 語法及 ShellCheck 通過。本機 PostgreSQL 沒有實例，完整 race／PostgreSQL 等待遠端本輪 CI。
+- 重建 Windows Agent，smoke 清除連線環境變數後以 --server／--token 真實上報，CPU／歷史／權限等 PASS；確認本工作區 Server／Agent 程序數為 0。
+- 以需求、品質、安全、實測及歷史五個面向自行複查，沒有呼叫子代理；前端未變更。新增參數驗證文件及使用範例，Release smoke 改為未來發布時使用安裝參數。
+- 目前正式 v0.1.1 支援安裝腳本寫入的環境設定，但 Agent 執行檔尚無 --token；未建立下一版標籤或發布新資產。
+
 ## 2026-09-16：Agent 免 ID 接入
 
 - 依使用者新要求取代先前三項連線設定；讀取 Server／Agent、兩安裝器、測試、部署及專案歷史，驗收寫入 question.md。
