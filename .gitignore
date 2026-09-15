@@ -10,3 +10,5 @@ coverage.out
 /.playwright-mcp/
 /spm-*.png
 /test-results.json
+__pycache__/
+*.pyc
