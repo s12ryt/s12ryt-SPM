@@ -1,5 +1,14 @@
 # 操作與決策紀錄
 
+## 2026-09-15：公開與 Release 安裝
+
+- 使用者明確授權公開儲存庫，已透過 gh repo edit 切換並確認 PUBLIC。
+- question 確認不加參數只裝 Server、`agent` 只裝 Agent，版本標籤觸發，首版 v0.1.0；已寫入驗收。
+- 新安裝器先 stub 後 7 組行為測試出現 5 個有效 RED，實作後 GREEN；另以 RED 發現啟動失敗未還原 service 檔，完成修復。
+- WSL 隔離安裝測試只模擬網路及主機服務命令，並寫入暫存根目錄，沒有修改本機 /etc、/opt 或啟動長駐服務。
+- 下載 Debian shellcheck 套件到系統暫存並解壓執行，沒有系統安裝或提權。ShellCheck、bash -n、12 項 Python 測試及 actionlint 通過。
+- Release workflow 重用完整 CI，發布後直接下載正式 Release 驗證 systemd、角色隔離、特殊字元密碼及真實 Agent；遠端結果待記錄。
+
 ## 2026-09-15：GitHub CI
 
 - 使用者要求上傳 GitHub 執行真實 Linux CI，授權建立版本庫、提交與推送。
