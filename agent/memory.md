@@ -6,7 +6,11 @@
 - 確認 gh 已登入 s12ryt，無既有 SPM 儲存庫；建立私有 https://github.com/s12ryt/s12ryt-SPM。
 - 初始化 main 分支，沿用既有 Git 使用者設定；不修改 Git config。
 - 新增 Linux CI：Ubuntu 24.04、PostgreSQL 17 service、Go 1.26.3、Node 24、前端測試／型別／建置、完整 race、Agent smoke、ARM64 交叉建置與證據 artifact。
-- CI 強制 PostgreSQL 和三項原 WSL 受阻 HTTP 測試為 PASS，任何 SKIP 均失敗。actionlint 本地通過，遠端結果待記錄。
+- CI 強制 PostgreSQL 和三項原 WSL 受阻 HTTP 測試為 PASS，任何測試案例 SKIP 均失敗。actionlint 本地通過。
+- 首輪遠端完整 race／PostgreSQL 已通過，但 JSON 檢查器誤判無單元測試的 Agent 入口套件 skip，阻止後續步驟。以 5 項 Python 測試先重現 2 個檢查器缺陷，再修正至全綠；以首輪真實 artifact 複驗通過並推送重跑。
+- 第二輪 run 34950376689／提交 a17530c393fbb46f6b01fe5d4ee5dba2a0b6437f 最終 success：完整 race、PostgreSQL 17、12 項前端測試、5 項 Python 測試、Linux 真實 Agent smoke、ARM64 交叉建置與 artifact 均通過。
+- 下載第二輪測試 JSON 至系統暫存目錄再次通過檢查器，確認必要案例全部 PASS 且零案例略過；測試與執行檔 artifact 保留 14 天。
+- 更新 CI 證據與歷史限制；收尾為僅文件的 `[skip ci]` 提交，不重寫歷史或變更已驗證程式。
 
 ## 2026-09-15
 

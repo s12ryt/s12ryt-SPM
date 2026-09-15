@@ -5,8 +5,8 @@
 - [x] 確認帳號 s12ryt，建立私有 s12ryt-SPM 儲存庫。
 - [x] 建立 Ubuntu 24.04、PostgreSQL 17、完整 race 與真實 Agent smoke workflow。
 - [x] actionlint 驗證 workflow；排除本機產物、瀏覽器紀錄與截圖。
-- [ ] 推送並確認遠端執行結果，失敗時修正後重跑。
-- [ ] 更新 PostgreSQL／完整 race 驗證限制與 CI 證據。
+- [x] 推送並確認遠端執行結果，修正檢查器誤判後第二輪全部成功。
+- [x] 更新 PostgreSQL／完整 race 驗證限制與 CI 證據，詳見 `ci-validation.md`。
 
 ## 2026-09-15：建立 Go VPS 即時監控系統
 
@@ -43,8 +43,8 @@
 
 ## 驗證限制
 
-- [ ] 於可連線的 PostgreSQL 實例執行 `TestPostgresIntegration`。
-- [ ] 在本機 loopback 正常的環境完成含 HTTP 的全套 race。
+- [x] GitHub Ubuntu runner 上 PostgreSQL 17 實例的 `TestPostgresIntegration` 通過。
+- [x] GitHub Ubuntu runner 上含 HTTP 的全套 race 通過，沒有排除案例。
 - [ ] ARM64 真機、systemd 與外部 Telegram／Webhook 投遞驗證；本次完成交叉編譯、範本與模擬測試。
 
 本輪交付為 7 個工作週期：原 6 個架構／實作／整合週期，加 1 個回歸與交付收尾週期。限制詳見 `validation.md`。
