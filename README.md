@@ -172,6 +172,8 @@ Smoke 測試會建立暫存資料庫、啟動主程式與 Agent，驗證真實�
 
 ## 自動發布 Releases
 
+[v0.1.0](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.0) 已發布；[發布與安裝驗收](https://github.com/s12ryt/s12ryt-SPM/actions/runs/34953718316)全部成功，詳見 [Release 驗證紀錄](agent/release-validation.md)。
+
 推送 `vX.Y.Z` 標籤觸發 [Release workflow](.github/workflows/release.yml)。它先重用完整 Linux CI，通過後將該次建置的 Server／Agent（Linux amd64、arm64）及 `SHA256SUMS` 上傳草稿，再發布為正式版本。安裝來源永遠是正式 Release；Artifacts 只用於 workflow 內傳遞已驗證產物。
 
 發布後以乾淨 Ubuntu runner 從公開 Release 真正安裝 systemd 服務，檢查 Server／Agent 角色隔離、特殊字元密碼、實際採樣與更新保留資料；失敗會把該 Release 撤回草稿。標籤應指向 main 已審查的提交，例如 `git tag v0.1.0` 後 `git push origin v0.1.0`。版本資產不覆寫；有修正時發布新版本。
