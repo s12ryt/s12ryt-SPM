@@ -60,3 +60,19 @@ func TestUpload(t *testing.T) {
 		t.Error("accepted non HTTP URL")
 	}
 }
+
+func TestUploadWithoutNodeID(t *testing.T) {
+	called := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		if r.URL.Path != "/monitor/api/ingest" || r.Header.Get("Authorization") != "Bearer private-token" {
+			t.Errorf("unexpected token-only upload: %s", r.URL.Path)
+		}
+		w.Write([]byte(`{"intervalSeconds":9}`))
+	}))
+	defer srv.Close()
+	interval, err := Upload(context.Background(), srv.Client(), srv.URL+"/monitor/", "", "private-token", model.Snapshot{Hostname: "test"})
+	if err != nil || interval != 9*time.Second || !called {
+		t.Fatalf("token-only upload: interval=%v err=%v called=%v", interval, err, called)
+	}
+}

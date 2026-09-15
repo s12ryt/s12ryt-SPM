@@ -84,10 +84,13 @@ func Upload(ctx context.Context, client *http.Client, endpoint, id, token string
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return 0, fmt.Errorf("invalid server URL")
 	}
-	if id == "" || strings.ContainsAny(id, "/\\?#") || token == "" {
+	if strings.ContainsAny(id, "/\\?#") || token == "" {
 		return 0, fmt.Errorf("invalid agent credentials")
 	}
-	u.Path = strings.TrimRight(u.Path, "/") + "/api/ingest/" + id
+	u.Path = strings.TrimRight(u.Path, "/") + "/api/ingest"
+	if id != "" {
+		u.Path += "/" + id
+	}
 	payload, err := json.Marshal(s)
 	if err != nil {
 		return 0, err
