@@ -244,3 +244,66 @@ it("does not switch hosts while the previous host's settings are loading", async
     .find((label) => label.text().includes("採樣間隔"))!;
   expect((interval.get("input").element as HTMLInputElement).value).toBe("60");
 });
+
+it.each([false, true])(
+  "ignores an older poll after deleting a host (old request fails: %s)",
+  async (fails) => {
+    vi.useFakeTimers();
+    const host = {
+      id: "removed",
+      name: "待刪除主機",
+      online: false,
+      lastSeen: 0,
+      latest: null,
+      rules: null,
+    };
+    let exists = true;
+    let delayNextNodes = false;
+    let resolveOld!: (value: unknown) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (path: string, init: RequestInit) => {
+        if (path === "/api/session") return reply({ admin: true, public: false });
+        if (path === "/api/settings") return reply(configuration());
+        if (init.method === "DELETE") {
+          exists = false;
+          return reply({});
+        }
+        if (path === "/api/nodes") {
+          if (delayNextNodes) {
+            delayNextNodes = false;
+            return new Promise((resolve) => {
+              resolveOld = resolve;
+            });
+          }
+          return reply(exists ? [host] : []);
+        }
+        return reply([]);
+      }),
+    );
+    const w = render();
+    await flushPromises();
+    await w.get('[data-testid="node-removed"]').trigger("click");
+    await flushPromises();
+    delayNextNodes = true;
+    await vi.advanceTimersByTimeAsync(3000);
+    await w
+      .findAll("button")
+      .find((b) => b.text() === "刪除主機")!
+      .trigger("click");
+    await w
+      .findAll("button")
+      .find((b) => b.text() === "確認刪除")!
+      .trigger("click");
+    await flushPromises();
+    expect(w.text()).toContain("開始監控你的第一台主機");
+    resolveOld(
+      fails
+        ? { ok: false, status: 503, json: async () => ({ error: "舊輪詢失敗" }) }
+        : reply([host]),
+    );
+    await flushPromises();
+    expect(w.find('[data-testid="node-removed"]').exists()).toBe(false);
+    expect(w.find('[role="alert"]').exists()).toBe(false);
+  },
+);

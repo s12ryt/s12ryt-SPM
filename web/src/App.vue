@@ -56,6 +56,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let stopped = false;
 let historyVersion = 0;
 let authVersion = 0;
+let refreshVersion = 0;
 const requests = new Set<AbortController>();
 class StaleRequest extends Error {}
 function clearAccess(publicView = false) {
@@ -182,36 +183,45 @@ async function history() {
     points.value = result ?? [];
 }
 async function refresh() {
-  const next = await api<{ admin: boolean; public: boolean }>("/api/session");
-  if (session.value.admin && !next.admin) clearAccess(next.public);
-  session.value = next;
-  const version = authVersion;
-  if (session.value.admin || session.value.public) {
-    const [n, a] = await Promise.all([
-      api<Node[]>("/api/nodes"),
-      api<Alert[]>("/api/alerts"),
-    ]);
-    if (version !== authVersion || stopped) return;
-    nodes.value = n ?? [];
-    alerts.value = a ?? [];
-    if (
-      selected.value &&
-      !nodes.value.some((node) => node.id === selected.value)
-    ) {
-      selected.value = "";
+  const refreshID = ++refreshVersion;
+  try {
+    const next = await api<{ admin: boolean; public: boolean }>("/api/session");
+    if (refreshID !== refreshVersion) throw new StaleRequest();
+    if (session.value.admin && !next.admin) clearAccess(next.public);
+    session.value = next;
+    const version = authVersion;
+    if (session.value.admin || session.value.public) {
+      const [n, a] = await Promise.all([
+        api<Node[]>("/api/nodes"),
+        api<Alert[]>("/api/alerts"),
+      ]);
+      if (refreshID !== refreshVersion || version !== authVersion || stopped)
+        throw new StaleRequest();
+      nodes.value = n ?? [];
+      alerts.value = a ?? [];
+      if (
+        selected.value &&
+        !nodes.value.some((node) => node.id === selected.value)
+      ) {
+        selected.value = "";
+        points.value = [];
+        historyVersion++;
+      }
+      if (selected.value) await history();
+    } else {
+      nodes.value = [];
+      alerts.value = [];
       points.value = [];
-      historyVersion++;
+      selected.value = "";
+      config.value = null;
+      tab.value = "overview";
     }
-    if (selected.value) await history();
-  } else {
-    nodes.value = [];
-    alerts.value = [];
-    points.value = [];
-    selected.value = "";
-    config.value = null;
-    tab.value = "overview";
+    if (refreshID !== refreshVersion) throw new StaleRequest();
+    ready.value = true;
+  } catch (e) {
+    if (refreshID !== refreshVersion) throw new StaleRequest();
+    throw e;
   }
-  ready.value = true;
 }
 async function poll() {
   try {
