@@ -1,5 +1,14 @@
 # 任務歷史
 
+## 2026-09-15：公開儲存庫、一鍵安裝與 Release
+
+- [x] 確認預設只裝 Server、`agent` 參數只裝 Agent；版本標籤發布。
+- [x] GitHub 儲存庫切換為 PUBLIC。
+- [x] TDD 安裝器：7 組測試，角色／平台／版本／校驗／設定保留／秘密／失敗回復。
+- [x] 重用完整 CI 建置 Release，加入真實 Release systemd 安裝驗收。
+- [ ] 推送並執行首版 v0.1.0，修正遠端驗收揭露問題。
+- [ ] 更新 Release 實測證據與完成報告。
+
 ## 2026-09-15：GitHub 真實 Linux CI
 
 - [x] 確認帳號 s12ryt，建立私有 s12ryt-SPM 儲存庫。

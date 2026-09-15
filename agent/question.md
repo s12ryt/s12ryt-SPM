@@ -1,5 +1,16 @@
 # 需求與 TDD 驗收標準
 
+## 公開儲存庫與 Release 安裝（2026-09-15）
+
+- 使用者要求 GitHub 儲存庫改為公開。
+- 根目錄 `install.sh` 不加參數預設只安裝 Server；第一個參數 `agent` 才只安裝 Agent，不連帶安裝另一端。
+- 使用 Bash process substitution：`bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install.sh)`；Agent 在指令最後加 `agent`。
+- 推送版本標籤自動測試、建置與發布 Releases，本次發布 `v0.1.0`。
+- 安裝脚本只能下載正式 Releases 已建置的執行檔，不下載原始碼編譯、不使用 Actions artifact 作為安裝來源。
+- Linux amd64／arm64 VPS，沿用 systemd 部署；初次要求必要設定，更新保留既有設定和資料。
+- 下載固定版本資產並驗證 SHA-256，下載／校驗失敗不得替換既有執行檔；預設最新版，提供 `--version vX.Y.Z` 指定版本。
+- 測試角色隔離、平台拒絕、必要設定、秘密不外洩、下載／校驗錯誤、設定保留與服務失敗回報。CI 使用真實 Release 產物複驗安裝。
+
 ## 使用者已確認（2026-09-15）
 
 - 以 Go 分別編寫主程式與 Agent，產出獨立執行檔。
