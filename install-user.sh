@@ -216,6 +216,23 @@ SUPERVISOR
     for file in "$destination" "$service_file" "$dir/run" "$control"; do
         [[ ! -f "$file" ]] || cp -p "$file" "$work/old-$(basename "$file")"
     done
+    rollback() {
+        printf '更新未完成，嘗試還原舊執行檔與服務設定。\n' >&2
+        if [[ -f "$control" && -f "$dir/manager" ]]; then
+            "$control" "$local_role" stop >/dev/null 2>&1 || true
+        fi
+        for file in "$destination" "$service_file" "$dir/run" "$control"; do
+            if [[ -f "$work/old-$(basename "$file")" ]]; then
+                cp -p "$work/old-$(basename "$file")" "$file.new" && mv -f "$file.new" "$file"
+            else
+                rm -f -- "$file"
+            fi
+        done
+        [[ "$manager" != systemd ]] || timeout 30 systemctl --user daemon-reload || true
+        [[ ! -f "$work/old-spm-$local_role" ]] || "$control" "$local_role" start || true
+    }
+    replacing=true
+    trap 'result=$?; if [[ "$result" != 0 && "$replacing" == true ]]; then rollback || true; fi; rm -rf -- "$work"; exit "$result"' EXIT
     install -m 0700 "$work/binary" "$destination.new"; mv -f "$destination.new" "$destination"
     install -m 0700 "$work/run" "$dir/run"
     install -m 0700 "$work/control" "$control"
@@ -232,16 +249,9 @@ SUPERVISOR
         else "$control" "$local_role" status >/dev/null || started=false; fi
     fi
     if [[ "$started" != true ]]; then
-        "$control" "$local_role" stop >/dev/null 2>&1 || true
-        for file in "$destination" "$service_file" "$dir/run" "$control"; do
-            if [[ -f "$work/old-$(basename "$file")" ]]; then
-                cp -p "$work/old-$(basename "$file")" "$file.new"; mv -f "$file.new" "$file"
-            fi
-        done
-        [[ "$manager" != systemd ]] || timeout 30 systemctl --user daemon-reload || true
-        [[ ! -f "$work/old-spm-$local_role" ]] || "$control" "$local_role" start || true
-        fail "服務啟動失敗；已嘗試還原舊版本。請查看：$control $local_role logs"
+        fail "服務啟動失敗。請查看：$control $local_role logs"
     fi
+    replacing=false
     printf '已安裝 %s %s（%s）；設定：%s/config.env\n' "$local_role" "$version" "$manager" "$dir"
     printf '管理指令：%s %s start|stop|restart|status|logs\n' "$control" "$local_role"
     if [[ "$manager" == supervisor ]]; then

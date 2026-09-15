@@ -122,6 +122,39 @@ cp "$FIXTURE/commands/fake-supervisorctl" "$3/bin/supervisorctl"''')
         self.assertEqual(self.installed().read_bytes(), b'previous')
         self.assertEqual(unit.read_text(), '[Service]\nEnvironment=ORIGINAL=1\n')
 
+    def test_file_install_failure_restores_previous_release(self):
+        self.assertEqual(self.run_installer(), 0, self.output)
+        self.installed().write_bytes(b'previous binary')
+        unit = self.home / '.config/systemd/user/spm-server.service'
+        unit.write_text('[Service]\nEnvironment=ORIGINAL=1\n')
+        files = [self.installed(), unit, self.role_dir() / 'run',
+                 self.home / '.local/bin/spm-user', self.role_dir() / 'config.env']
+        original = {path: path.read_bytes() for path in files}
+        real_install = shutil.which('install')
+        self.command('install', f'''target="${{@: -1}}"
+if [[ "$target" == *.service && ! -f "$FIXTURE/write-failed" ]]; then
+    touch "$FIXTURE/write-failed"
+    printf 'partial unit' > "$target"
+    exit 73
+fi
+exec "{real_install}" "$@"''')
+        self.assertEqual(self.run_installer(), 73, self.output)
+        self.assertTrue((self.base / 'write-failed').exists(), self.output)
+        for path, content in original.items():
+            self.assertEqual(path.read_bytes(), content, str(path))
+
+    def test_failed_first_install_can_retry_with_preserved_config(self):
+        self.assertNotEqual(self.run_installer(FAIL_SERVICE='1'), 0)
+        for path in [self.installed(), self.role_dir() / 'run',
+                     self.home / '.local/bin/spm-user',
+                     self.home / '.config/systemd/user/spm-server.service']:
+            self.assertFalse(path.exists(), str(path))
+        config = self.role_dir() / 'config.env'
+        original = config.read_bytes()
+        self.assertEqual(self.run_installer(SPM_ADMIN_PASSWORD=''), 0, self.output)
+        self.assertEqual(config.read_bytes(), original)
+        self.assertEqual(self.installed().read_bytes(), self.payload)
+
     def test_literal_secrets_are_loaded_without_evaluation(self):
         password = 'literal "quote" \\ $HOME $(touch ignored) % value'
         self.assertEqual(self.run_installer(SPM_ADMIN_PASSWORD=password), 0, self.output)
