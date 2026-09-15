@@ -1,5 +1,15 @@
 # 操作與決策紀錄
 
+## 2026-09-16：具體程式缺陷檢查
+
+- 沿用既有驗收、技術棧及提交／推送授權；讀取實作與測試，全程沒有使用子代理。
+- SQLite 特殊目錄與 Linux `?` 檔名先出現有效 RED；查閱 modernc SQLite 官方 file URI／pragma 文件後，以 URL 編碼修復。Windows／Linux store 回歸及 Linux store race 通過。
+- Vue 延遲 GET 在主機刪除後仍套用舊資料或錯誤，兩例先 RED；refresh 版本阻擋過時結果後 14 項測試通過。
+- 兩安裝器在 binary 替換後注入服務檔寫入 exit 73，確認有效 RED；EXIT trap 回復後原檔及退出碼驗證通過。首次安裝失敗重試兩例首跑即過，僅列回歸。
+- 全 24 項 Python 通過；Go 全套、vet、模組驗證、Bash 語法、Vue 型別與建置通過。gopls 不可用，不宣稱 Go LSP 成功。
+- Windows binary 重建後真實 Agent smoke 通過，測試 finally 清理子程序；本機安裝器測試僅使用暫存 fixture。
+- 對照需求、歷史與改動，自行複查品質、安全及驗證；GitHub 沒有既有 issue／PR。新增 `audit-2026-09-16.md`，遠端 CI 待推送後記錄，未發布或覆寫 Release。
+
 ## 2026-09-15：免 root VPS 安裝
 
 - 重讀安裝器、測試、CI、部署與三份專案紀錄，原 7 項安裝器測試通過。

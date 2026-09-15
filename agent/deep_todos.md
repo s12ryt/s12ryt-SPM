@@ -1,5 +1,16 @@
 # 任務歷史
 
+## 2026-09-16：具體程式缺陷檢查
+
+- [x] 重讀驗收與核心程式、前端、兩種安裝器，建立 Go／Vue／Python 基線。
+- [x] TDD 修正 SQLite 目錄 URL 與檔案 DSN 的特殊字元解析。
+- [x] TDD 修正刪除主機後舊輪詢成功／失敗覆寫新畫面。
+- [x] TDD 修正兩個安裝器中途寫檔失敗未回復，補首次失敗重試回歸。
+- [x] Go 全套／vet／模組檢查、Linux store race、Vue 14 項／型別／建置及 Python 24 項通過。
+- [x] Windows 真實 Server／Agent smoke 通過；主代理完成修補後複查。
+- [ ] 提交推送並驗證本輪完整 Linux race、PostgreSQL、兩種免 root 安裝 CI。
+- [ ] 保存 CI 證據並確認工作區狀態；詳見 `audit-2026-09-16.md`。
+
 ## 2026-09-15：免 root VPS 一鍵安裝
 
 - [x] 使用者確認自動選擇 systemd --user／Supervisor，寫入需求驗收。
