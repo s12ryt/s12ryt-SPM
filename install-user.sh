@@ -122,10 +122,13 @@ main() (
             printf 'SPM_ADMIN_USER=%s\nSPM_ADMIN_PASSWORD=%s\nSPM_LISTEN=%s\nSPM_DATA_DIR=%s\n' \
                 "$SPM_ADMIN_USER" "$SPM_ADMIN_PASSWORD" "$SPM_LISTEN" "$dir/data" > "$work/config.env"
         else
-            setting SPM_SERVER '主程式 URL'; setting SPM_NODE_ID '主機 ID'; setting SPM_TOKEN 'Agent Token' true
+            setting SPM_SERVER '主程式 URL'; setting SPM_TOKEN 'Agent Token' true
             [[ "$SPM_SERVER" =~ ^https?://[^/[:space:]]+(/[^[:space:]]*)?$ && "$SPM_SERVER" != *['?#@']* ]] || fail '主程式 URL 必須為 http(s)，不能包含帳密、query 或 fragment。'
-            [[ "$SPM_NODE_ID" =~ ^[a-zA-Z0-9_-]+$ ]] || fail '主機 ID 格式無效。'
-            printf 'SPM_SERVER=%s\nSPM_NODE_ID=%s\nSPM_TOKEN=%s\n' "$SPM_SERVER" "$SPM_NODE_ID" "$SPM_TOKEN" > "$work/config.env"
+            [[ -z ${SPM_NODE_ID:-} || "$SPM_NODE_ID" =~ ^[a-zA-Z0-9_-]+$ ]] || fail '舊版主機 ID 格式無效。'
+            {
+                printf 'SPM_SERVER=%s\nSPM_TOKEN=%s\n' "$SPM_SERVER" "$SPM_TOKEN"
+                if [[ -n ${SPM_NODE_ID:-} ]]; then printf 'SPM_NODE_ID=%s\n' "$SPM_NODE_ID"; fi
+            } > "$work/config.env"
         fi
     fi
     repository='https://github.com/s12ryt/s12ryt-SPM'
@@ -134,6 +137,12 @@ main() (
         [[ "$resolved" == "$repository/releases/tag/"* ]] || fail '最新 Release 連結無效。'
         version=${resolved##*/}
         [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail '找不到正式版本。'
+    fi
+    if [[ "$local_role" == agent && "$version" == v0.1.0 ]]; then
+        effective_config="$dir/config.env"
+        [[ -f "$effective_config" ]] || effective_config="$work/config.env"
+        grep -Eq '^SPM_NODE_ID=[a-zA-Z0-9_-]+$' "$effective_config" ||
+            fail 'v0.1.0 不支援免 ID 接入；請使用支援此功能的新版 Server 與 Agent Release。未變更既有安裝。'
     fi
     asset="spm-$local_role-linux-$arch"
     printf '下載 %s（%s）…\n' "$asset" "$version"
