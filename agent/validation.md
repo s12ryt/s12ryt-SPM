@@ -1,6 +1,6 @@
 # 驗證紀錄（2026-09-15）
 
-2026-09-16 Agent 免填 ID 的最新結果見 [Token 接入驗證](token-enrollment-validation.md)：Windows／Linux 真實免 ID 上報、完整 Go race／PostgreSQL、15 項 Vue、28 項 Python 與舊版安裝相容全部通過。正式 v0.1.0 尚不含本功能，發布狀態以該文件為準。
+2026-09-16 Agent 免填 ID 的最新結果見 [Token 接入驗證](token-enrollment-validation.md)：Windows／Linux 真實免 ID 上報、完整 Go race／PostgreSQL、15 項 Vue、28 項 Python 與舊版安裝相容全部通過。正式 v0.1.1 已發布，Release workflow 35028677753 的公開下載、免 ID 安裝／上報與更新保留驗收全部成功。
 
 最新程式修補見 [2026-09-16 缺陷稽核](audit-2026-09-16.md)：SQLite 路徑、前端舊輪詢與安裝中途回復均有 RED／GREEN；本輪完整 Linux race、PostgreSQL、14 項 Vue、24 項 Python、真實 Agent 與兩種免 root 安裝 CI 全部通過。
 
