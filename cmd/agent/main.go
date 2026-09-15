@@ -15,10 +15,16 @@ import (
 func main() {
 	endpoint := flag.String("server", os.Getenv("SPM_SERVER"), "Server URL")
 	id := flag.String("id", os.Getenv("SPM_NODE_ID"), "Optional legacy node ID")
+	tokenFlag := flag.String("token", "", "Agent token (defaults to SPM_TOKEN)")
 	flag.Parse()
 	token := os.Getenv("SPM_TOKEN")
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "token" {
+			token = *tokenFlag
+		}
+	})
 	if *endpoint == "" || token == "" {
-		log.Fatal("SPM_SERVER and SPM_TOKEN are required")
+		log.Fatal("server URL and token are required: use --server/--token or SPM_SERVER/SPM_TOKEN")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
