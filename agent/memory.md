@@ -10,6 +10,9 @@
 - 15 項 Vue、28 項 Python、Go 全套／vet／mod verify、型別與建置、Bash 語法及 ShellCheck 通過。本機 PostgreSQL 未提供實例，完整 race／PostgreSQL 待本輪遠端 CI。
 - 修改 smoke 不傳或繼承 SPM_NODE_ID，重建 Windows 雙端後真實上報 PASS，已確認本工作區服務程序數為 0。Release smoke 改為未來發布時驗證無 ID 安裝；既有非 root CI 保留正式 v0.1.0 的舊設定相容驗證。
 - 以需求、程式品質、安全、實際驗證及歷史五個面向自行複查，沒有呼叫子代理。尚未發布新版本或覆寫 v0.1.0。
+- 將 22 個檔案依實作與測試分為 11 筆提交，正常推送至 7359ffc8fdc683bb5bbccb41ec1007836f3f02d5；Linux CI 35028161412 三個 job 全部成功。
+- 已讀取三個 job 日誌：完整 Go race／PostgreSQL 17 零案例略過，新增免 ID 測試、15 項 Vue、28 項 Python、Linux 真實免 ID 上報及 ARM64 交叉建置通過；兩種非 root 管理器以正式 v0.1.0 驗證舊設定相容，沒有冒充新版 Release 驗收。
+- 最新正式 Release 仍為 v0.1.0；程式與 Linux 產物已可審查，發布下一版需另確認。保存本輪驗證證據，收尾僅更新文件。
 
 ## 2026-09-16：Agent 接入設定說明
 

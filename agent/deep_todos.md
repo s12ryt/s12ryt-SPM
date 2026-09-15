@@ -9,7 +9,7 @@
 - [x] Go 全套／vet／模組驗證、15 項 Vue／型別／建置、28 項 Python、ShellCheck 通過。
 - [x] Windows 真實執行檔在沒有 SPM_NODE_ID 的環境下完成兩份樣本、歷史與權限驗證，已清理子程序。
 - [x] 更新安裝範本、文件與下一版 Release smoke 驗收，主代理自行複查。
-- [ ] 分組提交推送並確認本輪完整 Linux CI，保存證據。
+- [x] 分組提交推送至 7359ffc；Linux CI 35028161412 三個 job 成功，已讀取日誌並保存證據。
 - [ ] 確認正式 Release 交付狀態；目前 v0.1.0 不包含本次免 ID 功能。
 
 ## 2026-09-16：Agent 如何指定 Server
