@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require a stable version tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: '[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]'
+
+  verify:
+    needs: validate-tag
+    uses: ./.github/workflows/linux-ci.yml
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v5
+        with:
+          name: linux-binaries
+          path: dist
+      - name: Prepare tested release assets and checksums
+        run: |
+          mv dist/spm-server dist/spm-server-linux-amd64
+          mv dist/spm-agent dist/spm-agent-linux-amd64
+          chmod 755 dist/spm-*
+          cd dist
+          sha256sum spm-server-linux-amd64 spm-agent-linux-amd64 \
+            spm-server-linux-arm64 spm-agent-linux-arm64 > SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - name: Upload a draft release
+        run: |
+          gh release create "$TAG" dist/* --verify-tag --draft --title "$TAG" --generate-notes
+      - name: Publish complete release
+        run: gh release edit "$TAG" --draft=false --latest
+      - name: Install from the actual public Release and verify systemd
+        run: timeout 240s sudo python3 scripts/release_smoke.py "$TAG"
+      - name: Withdraw release if installation verification failed
+        if: failure()
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --draft=true
+          fi

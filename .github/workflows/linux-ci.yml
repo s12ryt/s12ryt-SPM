@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -62,6 +63,8 @@ jobs:
           test -z "$(gofmt -l cmd internal web/embed*.go)"
           go vet ./...
           go mod verify
+          bash -n install.sh
+          shellcheck install.sh
       - name: Complete race suite with real PostgreSQL
         env:
           TEST_POSTGRES_URL: postgres://spm_ci:isolated-ci-only@127.0.0.1:5432/spm_ci?sslmode=disable
