@@ -19,6 +19,7 @@ def main():
     installer = Path(__file__).resolve().parents[1] / 'install.sh'
     environment = dict(os.environ, SPM_ADMIN_USER='release-test',
                        SPM_ADMIN_PASSWORD='release $literal "quote" \\ only', SPM_LISTEN='127.0.0.1:18082')
+    environment.pop('SPM_NODE_ID', None)
     base = 'http://127.0.0.1:18082'
     client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
@@ -43,7 +44,7 @@ def main():
         node = api('nodes', {'name': 'Release installation smoke'})
         server_hash = hashlib.sha256(Path('/opt/spm/spm-server').read_bytes()).hexdigest()
         config = Path('/etc/spm/server.env').read_bytes()
-        install('agent', SPM_SERVER=base, SPM_NODE_ID=node['id'], SPM_TOKEN=node['token'])
+        install('agent', SPM_SERVER=base, SPM_TOKEN=node['token'])
         assert hashlib.sha256(Path('/opt/spm/spm-server').read_bytes()).hexdigest() == server_hash
         assert Path('/etc/spm/server.env').read_bytes() == config
         deadline = time.monotonic() + 25
@@ -56,6 +57,7 @@ def main():
             raise AssertionError('Release Agent did not report two real samples')
         assert nodes[0]['online'], 'installed Agent must be online'
         agent_config = Path('/etc/spm/agent.env').read_bytes()
+        assert b'SPM_NODE_ID=' not in agent_config, 'new Agent installs must not require a node ID'
         install(SPM_ADMIN_PASSWORD='ignored-during-update')
         assert Path('/etc/spm/server.env').read_bytes() == config
         assert Path('/etc/spm/agent.env').read_bytes() == agent_config
@@ -64,7 +66,7 @@ def main():
         for role in ('server', 'agent'):
             assert Path(f'/etc/spm/{role}.env').stat().st_mode & 0o777 == 0o600
             subprocess.run(['systemctl', 'is-active', '--quiet', f'spm-{role}'], check=True, timeout=10)
-        print('PASS: public Release assets, role isolation, SHA256, systemd, real Agent samples, update preservation')
+        print('PASS: public Release assets, role isolation, SHA256, systemd, real Agent samples without node ID, update preservation')
     finally:
         for role in ('agent', 'server'):
             subprocess.run(['systemctl', 'disable', '--now', f'spm-{role}'], check=False, timeout=30)
