@@ -1,0 +1,19 @@
+[Unit]
+Description=SPM lightweight monitoring agent
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=spm
+Group=spm
+EnvironmentFile=/etc/spm/agent.env
+ExecStart=/opt/spm/spm-agent
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
