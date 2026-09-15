@@ -1,5 +1,7 @@
 # 驗證紀錄（2026-09-15）
 
+最新程式修補見 [2026-09-16 缺陷稽核](audit-2026-09-16.md)：SQLite 路徑、前端舊輪詢與安裝中途回復均有 RED／GREEN；本輪完整 Linux race、PostgreSQL、14 項 Vue、24 項 Python、真實 Agent 與兩種免 root 安裝 CI 全部通過。
+
 免 root 安裝最新結果見 [使用者安裝驗收](user-install-validation.md)：真實 Ubuntu 一般 UID 的 systemd／Supervisor、實際上報、崩潰重啟、啟停與更新保留資料全部通過，同次完整回歸 CI 成功。
 
 公開 v0.1.0 與一鍵安裝最新結果見 [Release 驗證](release-validation.md)：完整 CI、正式 Release 下載、systemd 安裝、真實 Agent 上報及更新保留資料均通過。
