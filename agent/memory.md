@@ -14,6 +14,10 @@
 - 已讀取日誌：完整 Go race／PostgreSQL 17 零案例略過，參數／環境覆蓋／help 測試、34 項 Python、15 項 Vue、靜態檢查及 ARM64 交叉建置通過；新 Linux Agent 僅以 --server／--token 完成真實上報。
 - systemd／Supervisor 各以 UID 1002 完成正式 v0.1.0 舊設定安裝相容驗收，沒有冒充新參數的正式 Release 安裝。補齊驗證紀錄，最新公開版本仍為 v0.1.1，下一版發行待確認。
 - 文件證據提交推送並確認工作區乾淨後，使用者明確批准發布 v0.1.2；標籤將指向已通過 CI 的 c00b48813313eaebe2e8fd6b6b1c5d0fd2124e54，由既有 Release workflow 重新驗證並實際安裝，不覆寫既有版本。
+- 推送 v0.1.2 標籤後，Release workflow 35038549060 全部成功。重跑完整 Go race／PostgreSQL 零案例略過、34 項 Python、15 項 Vue、Linux 真實參數上報與 ARM64 建置；兩種非 root 舊版相容驗收亦通過。
+- 讀取 publish job 104613697980 日誌：四份 SHA256 校驗 OK，從公開 Release 以 --server／--token 安裝 Agent、真實樣本、systemd、角色隔離及更新保留 PASS，測試服務已停止並停用。
+- gh 確認 v0.1.2 為 latest、非草稿及非預發布，含四個執行檔與 SHA256SUMS；在預核暫存目錄撰寫發行說明，以 notes-file 更新並讀回確認。未修改已發布資產或舊標籤。
+- README／部署與驗證文件更新為正式 v0.1.2，保留環境變數及 v0.1.1 Server 相容說明；如實區分 root 正式參數安裝驗收、免 root 隔離參數測試與舊版真實相容驗收。
 
 ## 2026-09-16：Agent 免 ID 接入
 
