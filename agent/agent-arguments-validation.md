@@ -23,7 +23,7 @@
 
 ## 本機驗證
 
-- Go 全套、go vet、模組驗證通過；PostgreSQL 未提供本機實例，完整 race 與真實 PostgreSQL 待本輪 Linux CI。
+- Go 全套、go vet、模組驗證通過；PostgreSQL 未提供本機實例，完整 race 與真實 PostgreSQL 已由下列本輪 Linux CI 補足。
 - 34 項 Python 通過：root 安裝 14、免 root 安裝 15、Go 結果檢查器 5。
 - Bash 語法與 ShellCheck 0.10.0 通過；Go 格式及 git diff 檢查通過。
 - 重建 Windows Agent，清除繼承的連線設定後，只用 --server／--token 向實際 Server 上報，兩份樣本、CPU、歷史、權限與 Token 遮蔽通過；確認無測試服務殘留。
@@ -31,7 +31,18 @@
 
 ## 遠端與發行
 
-本輪 Linux CI 待推送後記錄。主 job 使用新建置的 Agent 驗證直接參數上報；兩種非 root job 仍使用 v0.1.0 驗證舊設定相容，不能當作新版參數安裝實機證據。
+- [Linux CI 35037897881](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35037897881) 三個 job 全部成功。
+- 驗證程式提交：`c00b48813313eaebe2e8fd6b6b1c5d0fd2124e54`。
+- [完整回歸與整合](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35037897881/job/104611018706)：Go 全套 race、真實 PostgreSQL 17、15 項 Vue、34 項 Python、型別／靜態檢查、Linux 執行檔整合與 ARM64 交叉建置全部通過。
+- [systemd 一般帳號](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35037897881/job/104611018447) 與 [Supervisor 一般帳號](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35037897881/job/104611018606)：各以 UID 1002 驗證正式 Release 安裝、角色隔離、上報、崩潰重啟、啟停及更新保留。
+
+已讀取日誌確認新增參數、覆蓋順序、help 與錯誤測試成功；檢查器確認 `zero skipped test cases`。主 job 使用新建置的 Agent，真實整合輸出：
+
+```text
+PASS: private access, login, real Agent upload using --server/--token without node ID, CPU rate, history, token redaction, settings
+```
+
+兩種非 root job 仍使用 v0.1.0 驗證舊設定相容，不能當作新版參數安裝實機證據。
 
 正式 v0.1.1 可由新版安裝腳本將參數寫入環境設定使用；直接執行 Agent 的 --token 仍需要本輪新版執行檔。尚未發布下一版；Release smoke 已改為未來發布時從公開 Release 驗證參數安裝，不宣稱已執行。
 
