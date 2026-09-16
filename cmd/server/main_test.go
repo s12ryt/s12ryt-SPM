@@ -1,13 +1,33 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestLogTaskFailureIncludesReason(t *testing.T) {
+	var output bytes.Buffer
+	log.SetOutput(&output)
+	defer log.SetOutput(os.Stderr)
+	logTaskFailure(context.Background(), errors.New("database is locked"))
+	if !strings.Contains(output.String(), "database is locked") {
+		t.Fatalf("background task log should include the failing reason, got %q", output.String())
+	}
+	output.Reset()
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	logTaskFailure(cancelled, errors.New("shutting down"))
+	if output.Len() != 0 {
+		t.Fatalf("cancelled context should not log task failures, got %q", output.String())
+	}
+}
 
 func TestListenerFailureExitsNonzero(t *testing.T) {
 	if os.Getenv("SPM_TEST_BAD_LISTENER") == "1" {

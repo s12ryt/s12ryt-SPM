@@ -55,9 +55,7 @@ func run() int {
 					return
 				case <-ticker.C:
 					task, cancel := context.WithTimeout(ctx, 30*time.Second)
-					if err := fn(task); err != nil && ctx.Err() == nil {
-						log.Print("background task failed")
-					}
+					logTaskFailure(ctx, fn(task))
 					cancel()
 				}
 			}
@@ -85,6 +83,11 @@ func run() int {
 	}
 	workers.Wait()
 	return exitCode
+}
+func logTaskFailure(ctx context.Context, err error) {
+	if err != nil && ctx.Err() == nil {
+		log.Printf("background task failed: %v", err)
+	}
 }
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
