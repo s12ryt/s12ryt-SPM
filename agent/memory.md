@@ -9,6 +9,7 @@
 - 回歸：npm test 4 files 25 tests 全綠、vue-tsc＋Vite build 成功（JS 97.25kB gzip 36.89）；Stop-Process 舊 PID 13028/15848 後重建雙執行檔，Server 以 PID 17020 重啟，輪替主機 Token 後 Agent 以 PID 1776 用新 Token 上報，主機「運作正常」、CPU 有新值。
 - 瀏覽器驗證：ESC 關閉 modal、getComputedStyle 確認 pulse-soft／meter width 0.25s／trend-area path、375px 無水平溢出；截圖 spm-ui-after-*.png（gitignore 排除）。
 - App.vue 同檔含第三輪稽核修復與本輪交互修改，提交時歸入前端 commit 並於訊息說明；工作區另含 cmd/server 日誌修復與測試環境紀錄，分開分組提交。
+- 推送 a38f749／a4c03cd／5c26568／776ac18 後，CI run 35163640293（head 776ac18）三 job 全 success：主 job 含 App.interaction 7 tests、25 Vue、34 Python、TestPostgresIntegration 與完整 race 零略過、Linux binary smoke、ARM64；兩個非 root Release 安裝 job 亦成功。
 
 ## 2026-09-17：本機測試環境啟動
 

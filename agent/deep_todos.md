@@ -7,6 +7,7 @@
 - [x] 新增 App.interaction.test.ts 7 項測試，先出現 6 個有效 RED（ESC／背景關閉、notice 自動消失、aria-busy、spinner、trend-area）。
 - [x] 實作 Escape 與 backdrop 關閉 modal、成功訊息 6 秒自動消失、忙碌按鈕 aria-busy、連線中 spinner、圖表漸層面積、meter 過場、狀態點呼吸動畫、modal 入場與 hover 微調；reduced-motion 一併停用動畫。
 - [x] 25 項前端測試全綠、型別檢查與建置通過；重建執行檔並重啟本機環境（Server PID 17020、Agent PID 1776），瀏覽器驗證新樣式與 375px 無溢出。
+- [x] 推送 4 組提交（稽核修復、前端穩定性、UI 強化、紀錄），[完整 Linux CI run 35163640293](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35163640293) 三個 job 全部成功：25 項 Vue、34 項 Python、完整 race 與 PostgreSQL 零略過、ARM64 交叉建置。
 
 ## 2026-09-17：開啟本機測試環境
 
