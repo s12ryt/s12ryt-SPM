@@ -28,7 +28,7 @@ Agent 使用 `--server` 與 `--token` 指定連線，參數優先於 `SPM_SERVER
 
 免 ID 接入已於正式 [v0.1.1](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.1) 提供，請先更新 Server，再更新 Agent。正式下載後的安裝與上報已通過[驗收](agent/token-enrollment-validation.md)。指定不支援免 ID 的 v0.1.0 且設定缺少 ID 時，安裝器會明確拒絕，不替換現有執行檔。既有含 ID 的設定與上報方式仍相容。
 
-重跑安裝會更新至最新正式 Release；未給連線參數時保留原設定，明確給 `--server` 或 `--token` 時只更新指定欄位，其餘設定與資料保留。在最後加 `--version v0.1.1` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。更新失敗會嘗試還原舊執行檔、連線設定與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
+重跑安裝會更新至最新正式 Release；未給連線參數時保留原設定，明確給 `--server` 或 `--token` 時只更新指定欄位，其餘設定與資料保留。在最後加 `--version v0.1.2` 可指定版本。腳本先固定版本並校驗 SHA-256，成功後才替換執行檔。更新失敗會嘗試還原舊執行檔、連線設定與 service 設定，回傳失敗狀態；資料庫回復仍需自己的備份。
 
 - 執行檔：`/opt/spm/spm-server` 或 `/opt/spm/spm-agent`。
 - 設定：`/etc/spm/server.env` 或 `/etc/spm/agent.env`，root 擁有、權限 `0600`。未指定連線參數時更新不覆蓋，手動修改後重啟對應服務。
@@ -51,7 +51,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/insta
 bash <(curl -fsSL https://raw.githubusercontent.com/s12ryt/s12ryt-SPM/main/install-user.sh) agent --server 'https://monitor.example.com' --token '你的Token'
 ```
 
-同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.1`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
+同樣只下載正式 Release 並校驗 SHA-256；支援 `--version v0.1.2`。需要 Linux amd64／arm64、Bash、curl、CA 憑證、sha256sum 與一般 Linux 工具 `flock`／`timeout`。首次優先選擇可用的 `systemd --user`；若不可用，使用 Python 3 的 `venv` 在使用者目錄安裝固定版本 Supervisor 4.3.0，不需要 Go 或 Node.js。沒有 Python 3／venv 時會清楚提示，不嘗試 sudo 或安裝系統套件。
 
 Server 初次詢問密碼，帳號預設 `admin`，監聽 `0.0.0.0:8080`。Agent 的 `--server`／`--token` 參數、環境變數及首次詢問優先順序與 root 安裝相同。免 ID 接入的版本要求同上。VPS 若限制可用連接埠，先 `export SPM_LISTEN=0.0.0.0:業者分配的連接埠`；一般帳號請使用大於 1023 的 port。
 
@@ -126,7 +126,7 @@ $env:SPM_ADMIN_PASSWORD = Read-Host '管理員密碼（12–72 bytes）' -MaskIn
 
 本機測試可將 `--server` 改為 `http://127.0.0.1:8080`。未給參數時仍讀取 `SPM_SERVER`／`SPM_TOKEN`；明確傳入空值會拒絕啟動。命令列 Token 可能出現在 shell 歷史或程序參數中；需要避免時可沿用環境變數。跨機部署請使用 HTTPS 反向代理；範例見 [deploy/README.md](deploy/README.md)。程式持續執行，按 Ctrl+C 可結束。Windows Agent 為一般執行檔，可由工作排程器啟動，未實作原生 Windows Service 介面。
 
-目前直接執行 Agent 的 `--token` 需使用本分支原始碼建置；正式 v0.1.1 尚無此參數，待新版發布。上述安裝腳本會將參數寫入設定檔，因此可搭配 v0.1.1 使用。參數與更新回復的驗證見 [Agent 參數配置驗收](agent/agent-arguments-validation.md)。
+直接執行 Agent 的 `--server`／`--token` 已由正式 [v0.1.2](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.2) 提供，可搭配 v0.1.1 以上的 Server。兩種安裝腳本會將參數保存至設定檔供服務重啟後沿用。參數、更新回復與正式下載後的安裝驗證見 [Agent 參數配置驗收](agent/agent-arguments-validation.md)。
 
 ## 設定
 

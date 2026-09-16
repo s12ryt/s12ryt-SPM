@@ -10,7 +10,7 @@
 
 Agent 範本只填 `SPM_SERVER` 與 `SPM_TOKEN`，ID 由 Server 管理。免 ID 接入已於正式 [v0.1.1](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.1) 提供；先更新 Server，再更新 Agent，既有含 ID 的設定可保留。詳見 [版本要求](../README.md#vps-一鍵安裝)與[正式免 ID 安裝驗收](../agent/token-enrollment-validation.md)。
 
-兩種一鍵安裝均可在 `agent` 後加 `--server 'https://monitor.example.com' --token '你的Token'`。首次安裝參數優先於環境變數；更新時只替換明確指定的連線欄位，未給參數則保留原設定，更新失敗會嘗試回復。直接啟動 Agent 的同名參數使用方式與版本要求見 [快速啟動](../README.md#快速啟動)；正式 v0.1.1 的 Token 仍由環境變數提供，安裝腳本會代為保存至設定檔。
+兩種一鍵安裝均可在 `agent` 後加 `--server 'https://monitor.example.com' --token '你的Token'`。首次安裝參數優先於環境變數；更新時只替換明確指定的連線欄位，未給參數則保留原設定，更新失敗會嘗試回復。正式 [v0.1.2](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.2) Agent 也可直接使用同名參數，安裝腳本則會代為保存至設定檔供服務載入；詳見 [快速啟動](../README.md#快速啟動)與[參數安裝驗收](../agent/agent-arguments-validation.md)。
 
 1. 建立專用 `spm` 使用者，將對應 CPU 架構的執行檔安裝成 `/opt/spm/spm-server` 或 `/opt/spm/spm-agent`，權限 `0755`。
 2. 建立 `/etc/spm`，將環境範本另存為 `server.env`／`agent.env` 並填入自己的值；設定檔權限 `0600`、擁有者 root。
