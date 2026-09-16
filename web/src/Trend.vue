@@ -29,6 +29,37 @@ const path = computed(() => {
     })
     .join(" ");
 });
+const areaPath = computed(() => {
+  const start = props.points[0]?.time ?? 0;
+  const span = Math.max(1, (props.points.at(-1)?.time ?? start) - start);
+  const segments: string[] = [];
+  let pts: { x: number; y: number }[] = [];
+  const flush = () => {
+    if (pts.length >= 2) {
+      const body = pts
+        .slice(1)
+        .map((p) => `L${p.x},${p.y}`)
+        .join(" ");
+      segments.push(
+        `M${pts[0]!.x},${pts[0]!.y} ${body} L${pts.at(-1)!.x},160 L${pts[0]!.x},160 Z`,
+      );
+    }
+    pts = [];
+  };
+  for (const p of props.points) {
+    const v = p[props.metric];
+    if (v === null) {
+      flush();
+      continue;
+    }
+    pts.push({
+      x: 20 + ((p.time - start) / span) * 660,
+      y: 160 - (v / max.value) * 135,
+    });
+  }
+  flush();
+  return segments.join(" ");
+});
 const hasData = computed(() =>
   props.points.some((p) => p[props.metric] !== null),
 );
@@ -45,7 +76,19 @@ const hasData = computed(() =>
       role="img"
       :aria-label="title + '歷史走勢'"
     >
+      <defs>
+        <linearGradient :id="'grad-' + metric" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#64d8b2" stop-opacity="0.22" />
+          <stop offset="100%" stop-color="#64d8b2" stop-opacity="0" />
+        </linearGradient>
+      </defs>
       <path d="M20 25H680 M20 92H680 M20 160H680" class="grid-line" />
+      <path
+        v-if="areaPath"
+        :d="areaPath"
+        class="trend-area"
+        :fill="'url(#grad-' + metric + ')'"
+      />
       <path :d="path" class="trend-line" />
       <circle
         v-if="points.length === 1"
