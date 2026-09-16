@@ -1,6 +1,6 @@
 # 驗證紀錄（2026-09-15）
 
-2026-09-16 Agent 連線參數的最新結果見 [參數配置驗證](agent-arguments-validation.md)：完整 Linux CI 35037897881 成功，涵蓋 Go race／PostgreSQL、34 項 Python、15 項 Vue 與 Windows／Linux 真實參數上報。直接執行 Agent 的 --token 尚待新版正式發行；v0.1.1 可搭配安裝腳本寫入的環境設定。
+2026-09-16 Agent 連線參數的最新結果見 [參數配置驗證](agent-arguments-validation.md)：完整 Linux CI 35037897881 成功，涵蓋 Go race／PostgreSQL、34 項 Python、15 項 Vue 與 Windows／Linux 真實參數上報。正式 v0.1.2 已發布；Release workflow 35038549060 的公開下載、--server／--token 安裝上報與更新保留驗收全部成功。
 
 2026-09-16 Agent 免填 ID 的最新結果見 [Token 接入驗證](token-enrollment-validation.md)：Windows／Linux 真實免 ID 上報、完整 Go race／PostgreSQL、15 項 Vue、28 項 Python 與舊版安裝相容全部通過。正式 v0.1.1 已發布，Release workflow 35028677753 的公開下載、免 ID 安裝／上報與更新保留驗收全部成功。
 

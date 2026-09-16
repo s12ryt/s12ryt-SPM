@@ -44,6 +44,18 @@ PASS: private access, login, real Agent upload using --server/--token without no
 
 兩種非 root job 仍使用 v0.1.0 驗證舊設定相容，不能當作新版參數安裝實機證據。
 
-正式 v0.1.1 可由新版安裝腳本將參數寫入環境設定使用；直接執行 Agent 的 --token 仍需要本輪新版執行檔。尚未發布下一版；Release smoke 已改為未來發布時從公開 Release 驗證參數安裝，不宣稱已執行。
+使用者確認發布後，正式 [v0.1.2](https://github.com/s12ryt/s12ryt-SPM/releases/tag/v0.1.2) 已於 2026-09-16 00:09:14 UTC（台灣 08:09:14）公開，為 latest、非草稿及非預發布。版本標籤固定指向上述已驗證程式提交，Agent 執行檔可直接使用 --server／--token；原環境變數設定仍相容。
+
+- [Release workflow 35038549060](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35038549060) 全部成功，重新執行完整回歸、真實 Linux 參數上報與兩種舊版安裝相容測試。
+- [publish job](https://github.com/s12ryt/s12ryt-SPM/actions/runs/35038549060/job/104613697980) 發布 Linux amd64／arm64 Server、Agent 共四個執行檔與 SHA256SUMS，四份校驗均 OK。
+- 全新 Ubuntu runner 從公開 Release 下載，用安裝參數指定 Server 與 Token；確認無 ID 設定、至少兩份真實樣本、CPU、在線狀態、角色隔離、0600 設定權限，以及更新保留設定與資料庫。finally 停用並停止測試服務。
+
+已讀取 publish 日誌確認：
+
+```text
+PASS: public Release assets, role isolation, SHA256, systemd, Agent installation using --server/--token without node ID, update preservation
+```
+
+更新繁體中文發行說明與使用文件；後續收尾提交僅修改文件，不覆寫已發布資產或既有版本。正式新參數下載驗收為 root／systemd，免 root 新參數另由上述隔離安裝測試覆蓋。
 
 ARM64 尚未真機驗證。更新回復仍屬盡力還原，不包含資料庫、持續磁碟寫入失敗或斷電。共 3 輪工作週期：Agent 參數 TDD、安裝器 TDD、整合與交付驗證。
