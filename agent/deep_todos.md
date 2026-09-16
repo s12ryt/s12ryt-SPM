@@ -9,7 +9,7 @@
 - [x] Go 全套／vet／模組驗證、34 項 Python、Bash 語法與 ShellCheck 通過。
 - [x] Windows 真實 Agent 僅用命令列網址與 Token 上報，已清理測試程序。
 - [x] 主代理自行複查，更新使用範例、依賴與 agent-arguments-validation.md。
-- [ ] 提交推送並確認本輪完整 Linux CI。
+- [x] 分組推送至 c00b488；完整 Linux CI 35037897881 三個 job 全部成功，已保存日誌證據。
 - [ ] 確認新版執行檔發布方式，保存最終交付證據。
 
 ## 2026-09-16：Agent 免填主機 ID

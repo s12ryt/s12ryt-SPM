@@ -10,6 +10,9 @@
 - 重建 Windows Agent，smoke 清除連線環境變數後以 --server／--token 真實上報，CPU／歷史／權限等 PASS；確認本工作區 Server／Agent 程序數為 0。
 - 以需求、品質、安全、實測及歷史五個面向自行複查，沒有呼叫子代理；前端未變更。新增參數驗證文件及使用範例，Release smoke 改為未來發布時使用安裝參數。
 - 目前正式 v0.1.1 支援安裝腳本寫入的環境設定，但 Agent 執行檔尚無 --token；未建立下一版標籤或發布新資產。
+- 將 15 個檔案依實作與測試分為 8 筆提交，推送至 c00b48813313eaebe2e8fd6b6b1c5d0fd2124e54；本輪 Linux CI 35037897881 三個 job 全部成功。
+- 已讀取日誌：完整 Go race／PostgreSQL 17 零案例略過，參數／環境覆蓋／help 測試、34 項 Python、15 項 Vue、靜態檢查及 ARM64 交叉建置通過；新 Linux Agent 僅以 --server／--token 完成真實上報。
+- systemd／Supervisor 各以 UID 1002 完成正式 v0.1.0 舊設定安裝相容驗收，沒有冒充新參數的正式 Release 安裝。補齊驗證紀錄，最新公開版本仍為 v0.1.1，下一版發行待確認。
 
 ## 2026-09-16：Agent 免 ID 接入
 
