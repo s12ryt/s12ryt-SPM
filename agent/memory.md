@@ -13,6 +13,7 @@
 - 將 15 個檔案依實作與測試分為 8 筆提交，推送至 c00b48813313eaebe2e8fd6b6b1c5d0fd2124e54；本輪 Linux CI 35037897881 三個 job 全部成功。
 - 已讀取日誌：完整 Go race／PostgreSQL 17 零案例略過，參數／環境覆蓋／help 測試、34 項 Python、15 項 Vue、靜態檢查及 ARM64 交叉建置通過；新 Linux Agent 僅以 --server／--token 完成真實上報。
 - systemd／Supervisor 各以 UID 1002 完成正式 v0.1.0 舊設定安裝相容驗收，沒有冒充新參數的正式 Release 安裝。補齊驗證紀錄，最新公開版本仍為 v0.1.1，下一版發行待確認。
+- 文件證據提交推送並確認工作區乾淨後，使用者明確批准發布 v0.1.2；標籤將指向已通過 CI 的 c00b48813313eaebe2e8fd6b6b1c5d0fd2124e54，由既有 Release workflow 重新驗證並實際安裝，不覆寫既有版本。
 
 ## 2026-09-16：Agent 免 ID 接入
 
