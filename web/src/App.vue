@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   Activity,
   Server,
@@ -142,11 +142,16 @@ async function api<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
-    const data = await r.json();
+    let data: { error?: string } | undefined;
+    try {
+      data = await r.json();
+    } catch {
+      data = undefined;
+    }
     if (stopped || version !== authVersion) throw new StaleRequest();
     if (r.status === 401 && path !== "/api/login") clearAccess();
-    if (!r.ok) throw new Error(data.error || `請求失敗（${r.status}）`);
-    return data;
+    if (!r.ok) throw new Error(data?.error || `請求失敗（${r.status}）`);
+    return data as T;
   } catch (e) {
     if (stopped || (version !== authVersion && e instanceof StaleRequest))
       throw new StaleRequest();
@@ -235,10 +240,30 @@ async function poll() {
     if (!stopped) timer = setTimeout(poll, 3000);
   }
 }
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+watch(notice, (value) => {
+  if (noticeTimer !== undefined) clearTimeout(noticeTimer);
+  if (!value) return;
+  noticeTimer = setTimeout(() => {
+    notice.value = "";
+  }, 6000);
+});
+function onKeydown(event: KeyboardEvent) {
+  if (event.key !== "Escape") return;
+  if (enroll.value) {
+    enroll.value = false;
+    credential.value = null;
+  } else if (loginOpen.value) {
+    loginOpen.value = false;
+  }
+}
 onMounted(poll);
+onMounted(() => window.addEventListener("keydown", onKeydown));
 onUnmounted(() => {
   stopped = true;
   clearTimeout(timer);
+  if (noticeTimer !== undefined) clearTimeout(noticeTimer);
+  window.removeEventListener("keydown", onKeydown);
   historyVersion++;
   for (const controller of requests) controller.abort();
 });
@@ -342,9 +367,37 @@ async function schedule(cancel = false) {
     notice.value = cancel ? "已取消資料庫切換" : "已排程，請重啟主程式進行搬移";
   });
 }
+function legacyCopy(text: string): boolean {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.select();
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch {
+    copied = false;
+  }
+  area.remove();
+  return copied;
+}
 async function copyToken() {
   await action(async () => {
-    await navigator.clipboard.writeText(credential.value!.token);
+    const token = credential.value!.token;
+    let copied = false;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(token);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+    }
+    if (!copied) copied = legacyCopy(token);
+    if (!copied) throw new Error("無法存取剪貼簿，請手動選取 Token 複製");
     notice.value = "Token 已複製";
   });
 }
@@ -430,7 +483,7 @@ async function copyToken() {
         <div v-if="notice" role="status" class="banner success">
           {{ notice }}
         </div>
-        <div v-if="!ready" class="empty-state">正在連線至監控服務…</div>
+        <div v-if="!ready" class="empty-state"><span class="spinner" aria-hidden="true"></span>正在連線至監控服務…</div>
         <section
           v-else-if="!session.admin && !session.public"
           class="login-panel panel"
@@ -450,7 +503,7 @@ async function copyToken() {
                 type="password"
                 autocomplete="current-password"
                 required /></label
-            ><button class="primary" :disabled="busy">登入</button>
+            ><button class="primary" :disabled="busy" :aria-busy="busy || undefined">登入</button>
           </form>
         </section>
         <template v-else>
@@ -701,7 +754,7 @@ async function copyToken() {
                 離線判定至少為採樣間隔的 3 倍加 3 秒。新間隔於下次上報後生效。
               </p>
               <div class="button-row">
-                <button class="primary" :disabled="busy">儲存主機設定</button
+                <button class="primary" :disabled="busy" :aria-busy="busy || undefined">儲存主機設定</button
                 ><button type="button" @click="rotate" :disabled="busy">
                   <RefreshCw :size="15" />重設 Agent Token</button
                 ><button
@@ -821,7 +874,7 @@ async function copyToken() {
                     :required="config.settings.notifications.telegramEnabled"
                 /></label>
               </section>
-              <button class="primary" :disabled="busy">儲存設定</button>
+              <button class="primary" :disabled="busy" :aria-busy="busy || undefined">儲存設定</button>
             </form>
             <form
               class="panel padded database-form"
@@ -875,6 +928,7 @@ async function copyToken() {
     <div
       v-if="loginOpen && (session.public || session.admin)"
       class="modal-backdrop"
+      @click.self="loginOpen = false"
     >
       <section
         class="modal panel"
@@ -904,11 +958,11 @@ async function copyToken() {
               required
           /></label>
           <p v-if="error" role="alert" class="warning-text">{{ error }}</p>
-          <button class="primary" :disabled="busy">登入</button>
+          <button class="primary" :disabled="busy" :aria-busy="busy || undefined">登入</button>
         </form>
       </section>
     </div>
-    <div v-if="enroll && session.admin" class="modal-backdrop">
+    <div v-if="enroll && session.admin" class="modal-backdrop" @click.self="enroll = false; credential = null">
       <section
         class="modal panel"
         role="dialog"
@@ -946,7 +1000,7 @@ async function copyToken() {
               placeholder="例如：台北正式環境"
               maxlength="100"
               required /></label
-          ><button class="primary" :disabled="busy">建立主機</button>
+          ><button class="primary" :disabled="busy" :aria-busy="busy || undefined">建立主機</button>
         </form>
         <p v-if="error" role="alert" class="warning-text">{{ error }}</p>
       </section>
