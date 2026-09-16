@@ -1,5 +1,40 @@
 # 操作與決策紀錄
 
+## 2026-09-17：面板美化與交互強化
+
+- 使用者經 /ui-ux-pro-max 要求美化 Web 頁面與交互邏輯；按技能規則用 search.py 取得設計系統建議（OLED 深色、克制 glow、>300ms 操作要有 loading 回饋、反 scale hover），全程主代理執行未用子代理；不引入新字型或依賴。
+- 完整讀 App.vue／style.css／Trend.vue 後列出交互缺口：modal 無 ESC／背景關閉、成功訊息不自動消失、忙碌無 spinner、連線中純文字、圖表無面積填色、meter 無過場。
+- 新增 web/src/App.interaction.test.ts 七項測試，先跑出 6 個有效 RED（錯誤保留回歸首跑即綠，不計為新缺陷）；fixture 曾因 settings 形狀錯誤失敗，修正後才是一次有效 RED。
+- 實作：Escape（enroll 優先並清 credential）與 backdrop @click.self 關閉 modal、notice watch＋6 秒自動清＋卸載清理、五個 primary 按鈕 :aria-busy、empty-state spinner、Trend areaPath 分段閉合漸層面積；CSS 加 pulse-soft／fade-up／spin keyframes、meter width 過場、hover 陰影與 primary 微光，reduced-motion 停用 animation。
+- 回歸：npm test 4 files 25 tests 全綠、vue-tsc＋Vite build 成功（JS 97.25kB gzip 36.89）；Stop-Process 舊 PID 13028/15848 後重建雙執行檔，Server 以 PID 17020 重啟，輪替主機 Token 後 Agent 以 PID 1776 用新 Token 上報，主機「運作正常」、CPU 有新值。
+- 瀏覽器驗證：ESC 關閉 modal、getComputedStyle 確認 pulse-soft／meter width 0.25s／trend-area path、375px 無水平溢出；截圖 spm-ui-after-*.png（gitignore 排除）。
+- App.vue 同檔含第三輪稽核修復與本輪交互修改，提交時歸入前端 commit 並於訊息說明；工作區另含 cmd/server 日誌修復與測試環境紀錄，分開分組提交。
+
+## 2026-09-17：本機測試環境啟動
+
+- 使用者要求開啟本機測試環境；讀取三份專案紀錄、smoke、README、雙端入口與前端建置設定，保留工作區既有未提交修正。
+- 確認原無 SPM 程序、18080 無監聽；Vue LSP 無錯誤，前端型別／正式建置與 Windows 雙端建置成功。此次屬啟動操作，沒有新增程式或 TDD RED。
+- 以 `Start-Process -WindowStyle Hidden -PassThru` 啟動，啟動與健康檢查使用不同的有限 timeout 呼叫；Server PID `15848`、Agent PID `13028`。
+- 網址 `http://127.0.0.1:18080`，管理員 `admin`；使用既有 smoke 的本機專用測試密碼，僅在回覆提供登入資訊。未開放外部監聽，面板維持私人模式。
+- 資料目錄 `C:/Users/yoyo2/AppData/Local/Temp/opencode/spm-local-test-20260917-0654`，清除 Server 繼承的 DATABASE_URL，避免連到既有資料庫；Agent 清除舊 ID 並以 --server／--token 連線。
+- 以 API 建立「本機 Windows 測試」，確認 HTTP 200、登入成功、online=true、CPU 有值及 18 筆最近歷史樣本。首次檢查因 PowerShell 額外包裝 JSON 陣列誤算筆數，修正檢查命令後通過，非產品缺陷；Unicode 碼點確認主機名稱正確。
+- 環境持續運行，手動停止可執行 `Stop-Process -Id 13028,15848`（這兩個 PID 僅適用本次啟動）；停止後保留獨立測試資料。未提交、推送或更動 Release。
+
+## 2026-09-16：第三輪具體程式缺陷檢查
+
+- 使用者要求再次檢查具體程式碼；由主代理逐行重讀 internal 四套件、兩個 cmd 入口與 web/src 全部前端，全程未使用子代理，基線 Go 全套與 15 項 Vue 測試通過。
+- 確認三缺陷並全以 TDD 修復：非安全環境無 navigator.clipboard 導致複製 Token 顯示英文 TypeError、api() 對非 JSON 回應（反代 502）丢 SyntaxError 給用戶、cmd/server 背景任務失敗日誌缺少錯誤細節。
+- 新增 web/src/App.resilience.test.ts 三測試先 RED（實證錯誤訊息直接顯示給用戶）；App.vue 增加 legacyCopy 退路與 r.json() try-catch 後 18 項測試通過。
+- cmd/server/main_test.go 新增 TestLogTaskFailureIncludesReason 先編譯失敗 RED；實作 logTaskFailure 僅在 ctx 未取消時輸出含原因日誌。
+- 完整回歸：go test ./... -count=1、go vet ./...、npm --prefix web run build（vue-tsc＋Vite）全部通過。新增 `audit-2026-09-16-2.md`；本輪僅本地修改，未提交推送或變更 Release。
+- 記錄但不修：server.go events() 使用 time.Now() 而非 s.Now()（行為等價、非缺陷）；store.go Record() 的 nil sample 分支確認 Tick 安全。
+
+## 2026-09-16：兩端通訊方式
+
+- 為回答使用者通訊方式，讀取三份專案紀錄、架構、collector 的 Collect／Upload／Run、雙端入口及 Server ingest；未修改產品程式或啟動服務。
+- 確認 Agent 主動 POST /api/ingest，以 JSON 傳送樣本及 Authorization: Bearer Token 驗證，Server 成功保存後回覆 intervalSeconds。預設等待 3 秒，依回應更新；上報逾時 10 秒，失敗後等目前間隔再採集，未保存離線樣本。
+- 連線支援 HTTP／HTTPS，Server 自身監聽 HTTP，HTTPS 由反向代理終止；Agent 無監聽埠與 Server 主動命令通道。此次只核對原始碼並更新說明紀錄，未新增或重跑測試。
+
 ## 2026-09-16：Agent 連線參數
 
 - 依使用者「1，但是 token 也要」確認兩種安裝器與 Agent 啟動均使用 --server／--token；讀取既有入口、安裝器、測試、部署與歷史，寫入 question.md。

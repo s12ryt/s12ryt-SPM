@@ -1,5 +1,34 @@
 # 任務歷史
 
+## 2026-09-17：面板美化與交互強化
+
+- [x] 以 ui-ux-pro-max 生成設計系統建議（OLED 深色、克制 glow、>300ms 需 loading 回饋），完整讀前端三檔。
+- [x] 瀏覽器登入檢視現況，訂出 5 項交互缺口與視覺強化清單。
+- [x] 新增 App.interaction.test.ts 7 項測試，先出現 6 個有效 RED（ESC／背景關閉、notice 自動消失、aria-busy、spinner、trend-area）。
+- [x] 實作 Escape 與 backdrop 關閉 modal、成功訊息 6 秒自動消失、忙碌按鈕 aria-busy、連線中 spinner、圖表漸層面積、meter 過場、狀態點呼吸動畫、modal 入場與 hover 微調；reduced-motion 一併停用動畫。
+- [x] 25 項前端測試全綠、型別檢查與建置通過；重建執行檔並重啟本機環境（Server PID 17020、Agent PID 1776），瀏覽器驗證新樣式與 375px 無溢出。
+
+## 2026-09-17：開啟本機測試環境
+
+- [x] 讀取啟動方式與最新工作區紀錄，確認沒有既有 SPM 程序且 18080 可用。
+- [x] 重新建置目前前端與 Windows Server／Agent，以隱藏背景程序啟動。
+- [x] Server 僅監聽 `127.0.0.1:18080`，使用獨立暫存資料庫；建立本機測試主機並啟動 Agent。
+- [x] 確認 HTTP 200、管理員登入、主機在線、CPU 衍生值與多筆歷史樣本；保留環境供使用者操作。
+- [x] 記錄本次程序與停止方式；沒有修改產品程式或提交既有工作區變更。
+
+## 2026-09-16：第三輪具體程式缺陷檢查
+
+- [x] 逐行重讀 model／collector／store／server、cmd 雙入口與 web/src 前端，Go／Vue 基線全綠。
+- [x] TDD 修復非安全環境（HTTP 面板）複製 Token 無 clipboard API 的 fallback 與中文錯誤。
+- [x] TDD 修復 api() 對非 JSON 回應（反代 502 純文字）顯示 SyntaxError 給用戶。
+- [x] TDD 修復 cmd/server 背景任務失敗日誌缺少錯誤細節。
+- [x] Go 全套／vet、Vue 18 項測試／型別檢查／建置通過；詳見 `audit-2026-09-16-2.md`，變更僅在工作區未推送。
+
+## 2026-09-16：Agent／Server 通訊說明
+
+- [x] 查閱採集循環、HTTP 上報、Token 驗證、間隔回應及 Server 監聽實作。
+- [x] 說明 Agent 主動透過 HTTP／HTTPS 傳送 JSON，Server 回覆下次上報間隔；目前無主動推播命令及離線補傳。
+
 ## 2026-09-16：Agent 參數配置
 
 - [x] 確認一鍵安裝與啟動均支援 --server／--token，決策寫入 question.md。
